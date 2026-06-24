@@ -1,178 +1,135 @@
 #!/bin/bash
 
 # Setup Kong Gateway con todos los microservicios
-# Este script registra los servicios y rutas en Kong
-
 KONG_ADMIN="http://localhost:8001"
 
 echo "🔧 Configurando Kong Gateway..."
-echo "Admin API: $KONG_ADMIN"
+sleep 2
 
-# Esperar a que Kong esté listo
-sleep 5
+# Limpiar rutas previas
+echo "🧹 Limpiando configuración anterior..."
+curl -s "$KONG_ADMIN/routes" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | while read id; do
+  curl -s -X DELETE "$KONG_ADMIN/routes/$id" > /dev/null
+done
 
 # ============================
 # ASIGNACIÓN Y TRAZABILIDAD
 # ============================
 echo "📝 Registrando Asignación y Trazabilidad..."
 
-curl -X POST "$KONG_ADMIN/services" \
+curl -s -X POST "$KONG_ADMIN/services" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "asignacion-service",
-    "url": "http://asignacion-trazabilidad:3002",
-    "tags": ["parqueadero"]
-  }' 2>/dev/null
+    "url": "http://asignacion-trazabilidad:3002"
+  }' > /dev/null
 
-curl -X POST "$KONG_ADMIN/services/asignacion-service/routes" \
+# Ruta API
+curl -s -X POST "$KONG_ADMIN/services/asignacion-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "asignacion-api",
-    "paths": ["/api/asignaciones"],
-    "strip_path": false,
-    "tags": ["asignacion"]
-  }' 2>/dev/null
+    "paths": ["/api/asignaciones"]
+  }' > /dev/null
 
-curl -X POST "$KONG_ADMIN/services/asignacion-service/routes" \
+# Ruta Swagger
+curl -s -X POST "$KONG_ADMIN/services/asignacion-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "asignacion-swagger",
-    "paths": ["/asignacion/swagger", "/asignacion/swagger-ui.html"],
-    "strip_path": true,
-    "tags": ["docs"]
-  }' 2>/dev/null
+    "paths": ["/asignacion"]
+  }' > /dev/null
 
 # ============================
 # VEHÍCULOS
 # ============================
 echo "🚗 Registrando Vehículos..."
 
-curl -X POST "$KONG_ADMIN/services" \
+curl -s -X POST "$KONG_ADMIN/services" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "vehiculos-service",
-    "url": "http://vehiculos:3000",
-    "tags": ["parqueadero"]
-  }' 2>/dev/null
+    "url": "http://vehiculos:3000"
+  }' > /dev/null
 
-curl -X POST "$KONG_ADMIN/services/vehiculos-service/routes" \
+# Ruta API
+curl -s -X POST "$KONG_ADMIN/services/vehiculos-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "vehiculos-api",
-    "paths": ["/vehiculos"],
-    "strip_path": true,
-    "tags": ["vehiculos"]
-  }' 2>/dev/null
-
-curl -X POST "$KONG_ADMIN/services/vehiculos-service/routes" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "vehiculos-swagger",
-    "paths": ["/vehiculos/swagger", "/vehiculos/swagger-ui.html"],
-    "strip_path": false,
-    "tags": ["docs"]
-  }' 2>/dev/null
+    "paths": ["/vehiculos"]
+  }' > /dev/null
 
 # ============================
 # PERSONAS
 # ============================
 echo "👥 Registrando Personas..."
 
-curl -X POST "$KONG_ADMIN/services" \
+curl -s -X POST "$KONG_ADMIN/services" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "personas-service",
-    "url": "http://personas:3001",
-    "tags": ["parqueadero"]
-  }' 2>/dev/null
+    "url": "http://personas:3001"
+  }' > /dev/null
 
-curl -X POST "$KONG_ADMIN/services/personas-service/routes" \
+# Ruta API
+curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "personas-api",
-    "paths": ["/personas"],
-    "strip_path": true,
-    "tags": ["personas"]
-  }' 2>/dev/null
-
-curl -X POST "$KONG_ADMIN/services/personas-service/routes" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "personas-swagger",
-    "paths": ["/personas/swagger", "/personas/swagger-ui.html"],
-    "strip_path": false,
-    "tags": ["docs"]
-  }' 2>/dev/null
+    "paths": ["/personas"]
+  }' > /dev/null
 
 # ============================
 # ZONAS
 # ============================
 echo "📍 Registrando Zonas..."
 
-curl -X POST "$KONG_ADMIN/services" \
+curl -s -X POST "$KONG_ADMIN/services" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "zonas-service",
-    "url": "http://zonas:8080",
-    "tags": ["parqueadero"]
-  }' 2>/dev/null
+    "url": "http://zonas:8080"
+  }' > /dev/null
 
-curl -X POST "$KONG_ADMIN/services/zonas-service/routes" \
+# Ruta API
+curl -s -X POST "$KONG_ADMIN/services/zonas-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "zonas-api",
-    "paths": ["/zonas"],
-    "strip_path": true,
-    "tags": ["zonas"]
-  }' 2>/dev/null
-
-curl -X POST "$KONG_ADMIN/services/zonas-service/routes" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "zonas-swagger",
-    "paths": ["/zonas/swagger-ui.html", "/zonas/v3/api-docs"],
-    "strip_path": false,
-    "tags": ["docs"]
-  }' 2>/dev/null
+    "paths": ["/zonas"]
+  }' > /dev/null
 
 # ============================
-# PLUGINS GLOBALES CORS
+# PLUGINS CORS
 # ============================
-echo "🔌 Configurando plugins..."
+echo "🔌 Agregando CORS a todos los servicios..."
 
-# CORS en Asignación
-curl -X POST "$KONG_ADMIN/services/asignacion-service/plugins" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "cors", "config": {"origins": ["*"], "credentials": true}}' 2>/dev/null
+for service in asignacion-service vehiculos-service personas-service zonas-service; do
+  curl -s -X POST "$KONG_ADMIN/services/$service/plugins" \
+    -H "Content-Type: application/json" \
+    -d '{"name": "cors", "config": {"origins": ["*"]}}' > /dev/null 2>&1
+done
 
-# CORS en Vehículos
-curl -X POST "$KONG_ADMIN/services/vehiculos-service/plugins" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "cors", "config": {"origins": ["*"], "credentials": true}}' 2>/dev/null
+sleep 1
 
-# CORS en Personas
-curl -X POST "$KONG_ADMIN/services/personas-service/plugins" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "cors", "config": {"origins": ["*"], "credentials": true}}' 2>/dev/null
-
-# CORS en Zonas
-curl -X POST "$KONG_ADMIN/services/zonas-service/plugins" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "cors", "config": {"origins": ["*"], "credentials": true}}' 2>/dev/null
-
-echo "✅ Kong configurado exitosamente!"
 echo ""
-echo "🌐 URLs disponibles:"
-echo "  Asignación:   http://localhost:8000/api/asignaciones"
-echo "  Vehículos:    http://localhost:8000/vehiculos"
-echo "  Personas:     http://localhost:8000/personas"
-echo "  Zonas:        http://localhost:8000/zonas"
+echo "✅ Kong Gateway configurado exitosamente!"
 echo ""
-echo "📚 Swagger disponible en:"
-echo "  Asignación:   http://localhost:8000/asignacion/swagger-ui.html"
-echo "  Vehículos:    http://localhost:8000/vehiculos/swagger"
-echo "  Personas:     http://localhost:8000/personas/swagger"
-echo "  Zonas:        http://localhost:8000/zonas/swagger-ui.html"
+echo "🌐 ACCESO DIRECTO A MICROSERVICIOS:"
+echo "  📝 Asignación y Trazabilidad: http://localhost:8000/api/asignaciones"
+echo "  🚗 Vehículos:                 http://localhost:8000/vehiculos"
+echo "  👥 Personas:                  http://localhost:8000/personas"
+echo "  📍 Zonas:                     http://localhost:8000/zonas"
 echo ""
-echo "Kong Admin: http://localhost:8001"
-echo "Kong Manager: http://localhost:8002"
+echo "📚 SWAGGER DOCUMENTATION:"
+echo "  📝 Asignación:   http://localhost:3002/swagger"
+echo "  🚗 Vehículos:    http://localhost:3000/swagger"
+echo "  👥 Personas:     http://localhost:3001/swagger"
+echo "  📍 Zonas:        http://localhost:8080/swagger-ui.html"
+echo ""
+echo "⚙️  ADMIN PANEL:"
+echo "  Kong Admin API:  http://localhost:8001"
+echo "  Kong Manager UI: http://localhost:8002"
+echo ""
+echo "✨ Todos los servicios están disponibles a través de Kong en puerto 8000"
