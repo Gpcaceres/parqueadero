@@ -52,7 +52,6 @@ import { AssignmentController } from './controllers/assignment.controller';
     TypeOrmModule.forFeature([Assignment, AuditTrail]),
     HttpModule.register({
       timeout: 5000,
-      maxRetries: 1,
     }),
   ],
   controllers: [AssignmentController],
