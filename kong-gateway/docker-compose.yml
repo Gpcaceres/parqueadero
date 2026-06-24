@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Base de datos para Kong
+  kong-db:
+    image: postgres:16-alpine
+    container_name: kong_db
+    environment:
+      POSTGRES_DB: kong
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: kong123
+    ports:
+      - "5433:5432"
+    volumes:
+      - kong_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - kong_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Migración de Kong (bootstrap)
+  kong-migration:
+    image: kong:3.6-alpine
+    container_name: kong_migration
+    command: kong migrations bootstrap
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong123
+    depends_on:
+      kong-db:
+        condition: service_healthy
+    networks:
+      - kong_network
+    restart: on-failure
+
+  # Kong API Gateway
+  kong:
+    image: kong:3.6-alpine
+    container_name: kong_api_gateway
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong123
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+    ports:
+      - "8000:8000"    # Kong Proxy (solicitudes de clientes)
+      - "8443:8443"    # Kong Proxy (HTTPS)
+      - "8001:8001"    # Kong Admin API
+      - "8444:8444"    # Kong Admin API (HTTPS)
+    depends_on:
+      - kong-migration
+    networks:
+      - kong_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8001/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kong Manager (UI para administrar Kong)
+  kong-manager:
+    image: kong:3.6-alpine
+    container_name: kong_manager_ui
+    command: kong start
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong123
+      KONG_ADMIN_API_URI: http://kong:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+      KONG_ADMIN_GUI_LISTEN: 0.0.0.0:8002
+    ports:
+      - "8002:8002"    # Kong Manager UI
+    depends_on:
+      - kong
+    networks:
+      - kong_network
+    restart: unless-stopped
+
+volumes:
+  kong_db_data:
+    driver: local
+
+networks:
+  kong_network:
+    driver: bridge

@@ -1,0 +1,180 @@
+_format_version: "3.0"
+_transform: true
+
+# Servicios y rutas para los microservicios de Parqueadero
+# Este archivo puede ser importado en Kong para configurar automáticamente todos los servicios
+
+services:
+  # ============================
+  # MICROSERVICIO: ZONAS
+  # ============================
+  - name: zonas-service
+    url: http://host.docker.internal:8080
+    tags:
+      - parqueadero
+      - zonas
+    routes:
+      - name: zonas-api
+        paths:
+          - /api/zonas
+          - /api/espacios
+        strip_path: false
+        tags:
+          - zonas
+      - name: zonas-swagger
+        paths:
+          - /api/zonas/swagger-ui.html
+          - /api/zonas/v3/api-docs
+        strip_path: false
+        tags:
+          - zonas-docs
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          credentials: true
+          max_age: 3600
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+      - name: request-size-limiting
+        config:
+          allowed_payload_size: 128
+
+  # ============================
+  # MICROSERVICIO: VEHÍCULOS
+  # ============================
+  - name: vehiculos-service
+    url: http://host.docker.internal:3000
+    tags:
+      - parqueadero
+      - vehiculos
+    routes:
+      - name: vehiculos-api
+        paths:
+          - /api/vehiculos
+          - /api/marcas
+          - /api/modelos
+        strip_path: false
+        tags:
+          - vehiculos
+      - name: vehiculos-swagger
+        paths:
+          - /api/vehiculos/swagger-ui.html
+          - /api/vehiculos/docs
+        strip_path: false
+        tags:
+          - vehiculos-docs
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          credentials: true
+          max_age: 3600
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+
+  # ============================
+  # MICROSERVICIO: PERSONAS
+  # ============================
+  - name: personas-service
+    url: http://host.docker.internal:3001
+    tags:
+      - parqueadero
+      - personas
+    routes:
+      - name: personas-api
+        paths:
+          - /api/personas
+          - /api/usuarios
+          - /api/roles
+        strip_path: false
+        tags:
+          - personas
+      - name: personas-swagger
+        paths:
+          - /api/personas/swagger-ui.html
+          - /api/personas/docs
+        strip_path: false
+        tags:
+          - personas-docs
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          credentials: true
+          max_age: 3600
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+
+# ============================
+# CONSUMIDORES Y AUTENTICACIÓN
+# ============================
+consumers:
+  # Usuario administrativo
+  - username: admin
+    custom_id: admin-user
+    tags:
+      - admin
+    keyauth_credentials:
+      - key: admin-key-parqueadero-secret-12345
+    acls:
+      - group: admin
+
+  # Usuario de aplicación móvil
+  - username: mobile-app
+    custom_id: mobile-app-user
+    tags:
+      - mobile
+    keyauth_credentials:
+      - key: mobile-app-key-secret-67890
+    acls:
+      - group: mobile
+
+  # Usuario de sistema (integraciones)
+  - username: system
+    custom_id: system-user
+    tags:
+      - system
+    keyauth_credentials:
+      - key: system-key-secret-11111
+    acls:
+      - group: system
+
+# ============================
+# PLUGINS GLOBALES
+# ============================
+plugins:
+  # Logging
+  - name: request-log
+    config:
+      stdout: true
+
+  # Transformación de respuesta (agregar headers)
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Parqueadero-API: v1.0"
+          - "X-API-Gateway: Kong"
+
+  # Rate limiting global
+  - name: rate-limiting
+    config:
+      minute: 10000
+      policy: local

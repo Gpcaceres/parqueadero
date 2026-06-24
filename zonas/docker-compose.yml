@@ -1,0 +1,32 @@
+version: '3.8'
+
+# =====================================================
+# Zonas Microservice - Simplified Compose
+# =====================================================
+# NOTA: Kong Gateway está en kong-gateway/ como servicio independiente
+# Este archivo solo contiene la BD de Zonas
+# Kong enrutará las solicitudes a través del puerto 8000
+
+services:
+  # Base de datos para la aplicación Zonas
+  postgres:
+    image: postgres:16-alpine
+    container_name: zonas_postgres
+    environment:
+      POSTGRES_DB: zonas_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    # Este volumen se puede eliminar con: docker-compose down -v

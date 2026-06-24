@@ -1,0 +1,247 @@
+# ============================================
+# GLOBAL .gitignore para Proyecto Parqueadero
+# ============================================
+
+# ============================================
+# Dependencias y módulos
+# ============================================
+node_modules/
+*/node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ============================================
+# Compilación y construcción
+# ============================================
+/dist
+/build
+/out
+*/dist/*
+*/build/*
+*.jar
+target/
+*/target/*
+
+# ============================================
+# Variables de entorno
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example (solo incluir en git)
+
+# ============================================
+# IDE y Editores
+# ============================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+/test-results/
+/junit.xml
+
+# ============================================
+# Logs y temporales
+# ============================================
+logs/
+*.log
+.tmp/
+.temp/
+tmp/
+temp/
+
+# ============================================
+# Sistema operativo
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ============================================
+# Base de datos
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+dump.sql
+*.dump
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+.docker/
+
+# ============================================
+# Archivos específicos de desarrollo
+# ============================================
+.prettierignore
+.eslintcache
+.stylelintcache
+
+# ============================================
+# Archivos de backup
+# ============================================
+*.bak
+*.swp
+*.swo
+*~
+
+# ============================================
+# NestJS específicos
+# ============================================
+dist/
+.nestjs/
+.webpack/
+
+# ============================================
+# Spring Boot específicos (Maven)
+# ============================================
+.mvn/
+mvnw
+mvnw.cmd
+target/
+*.war
+*.ear
+
+# ============================================
+# Ignorar archivos de configuración sensibles
+# ============================================
+*.pem
+*.key
+*.crt
+*.cert
+
+# ============================================
+# Archivos compilados de TypeScript
+# ============================================
+*.tsbuildinfo
+*.js.map
+*.d.ts.map
+
+# ============================================
+# Yarn
+# ============================================
+.yarn/
+.yarnrc
+yarn-error.log
+
+# ============================================
+# Husky (Git hooks)
+# ============================================
+.husky/
+
+# ============================================
+# IDE específicos
+# ============================================
+.vscode/*
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+.VS/
+*.vcxproj.user
+*.sln.user
+
+# ============================================
+# Archivos de dependencias locales
+# ============================================
+package-lock.json (opcional, descomentar si se usa git-friendly versioning)
+pnpm-lock.yaml (opcional)
+yarn.lock (opcional)
+
+# ============================================
+# Cachés
+# ============================================
+.eslintcache
+.stylelintcache
+.cache
+.gradle
+.parcel-cache
+
+# ============================================
+# Archivos generados automáticamente
+# ============================================
+*.generated.ts
+*.generated.js
+tsconfig.tsbuildinfo
+
+# ============================================
+# Directorios de desarrollo local
+# ============================================
+.local/
+.secrets/
+
+# ============================================
+# Archivos de IDE específicos
+# ============================================
+.IntelliJIdea*
+*.iml
+*.iws
+*.ipr
+
+# ============================================
+# Archivos de audio/video/imágenes grandes
+# ============================================
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.zip (si contiene builds)
+
+# ============================================
+# Reportes y análisis
+# ============================================
+coverage/
+dist/
+.nyc_output/
+junit.xml
+cobertura-coverage.xml
+
+# ============================================
+# Archivos temporales de Google Drive, OneDrive, etc
+# ============================================
+~$*.xlsx
+~$*.doc
+*.tmp
+
+# ============================================
+# Comentario: INCLUIR EN GIT
+# ============================================
+# ✅ .env.example - Plantilla de variables
+# ✅ docker-compose.yml - Orquestación
+# ✅ package.json - Dependencias
+# ✅ package-lock.json (considerar)
+# ✅ tsconfig.json - Configuración TS
+# ✅ README.md - Documentación
+# ✅ .gitignore - Este archivo

@@ -1,0 +1,75 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  # Servicio para la API de Zonas
+  - name: zonas-api
+    url: http://zonas:8080
+    routes:
+      - name: zonas-routes
+        paths:
+          - /api/zonas
+          - /api/espacios
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          credentials: true
+          max_age: 3600
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+
+  # Servicio para Swagger/OpenAPI
+  - name: swagger-docs
+    url: http://zonas:8080
+    routes:
+      - name: swagger-ui-route
+        paths:
+          - /swagger-ui.html
+          - /swagger-ui/
+        strip_path: false
+      - name: api-docs-route
+        paths:
+          - /v3/api-docs
+          - /v3/api-docs.yaml
+        strip_path: false
+
+  # Servicio para Actuator (healthcheck)
+  - name: health-check
+    url: http://zonas:8080
+    routes:
+      - name: actuator-route
+        paths:
+          - /actuator
+        strip_path: false
+
+# Consumidores (usuarios que accederán a la API)
+consumers:
+  - username: admin
+    custom_id: admin-user
+    keyauth_credentials:
+      - key: zonas-admin-key-12345
+    acl:
+      - group: admin
+
+  - username: app-user
+    custom_id: app-user
+    keyauth_credentials:
+      - key: zonas-app-key-67890
+    acl:
+      - group: users
+
+# Plugins globales
+plugins:
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 128
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Powered-By: Parqueadero-API"

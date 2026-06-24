@@ -1,0 +1,24 @@
+package ec.edu.espe.zonas.services;
+
+import ec.edu.espe.zonas.dtos.EspacioRequestDto;
+import ec.edu.espe.zonas.dtos.EspacioResponseDto;
+
+import java.util.List;
+import java.util.UUID;
+
+public interface EspacioService {
+
+    List<EspacioResponseDto> listarEspacios();
+
+    EspacioResponseDto obtenerEspacioPorId(UUID idEspacio);
+
+    List<EspacioResponseDto> listarEspaciosPorZona(UUID idZona);
+
+    List<EspacioResponseDto> listarEspaciosActivos();
+
+    EspacioResponseDto crearEspacio(EspacioRequestDto requestDto);
+
+    EspacioResponseDto actualizarEspacio(UUID idEspacio, EspacioRequestDto request);
+
+    void activarDesactivar(UUID idEspacio);
+}

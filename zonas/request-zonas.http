@@ -1,0 +1,33 @@
+### Variables
+@baseUrl = http://localhost:8080/api/v1
+@contentType = application/json
+
+
+=======================================
+### 1. Listar todas las zonas
+GET {{baseUrl}}/zonas
+Accept: {{contentType}}
+
+### 8. Listar todos los espacios
+GET {{baseUrl}}/espacios
+Accept: {{contentType}}
+
+### Listar espacios de la zona 65489ee7-fe5b-471c-b8b4-d6493533dd6e
+GET {{baseUrl}}/espacios/zona/65489ee7-fe5b-471c-b8b4-d6493533dd6e
+Accept: {{contentType}}
+
+
+### Actualizar espacio y cambiar estado a INACTIVO
+PUT {{baseUrl}}/espacios/5f4ebe72-728b-45e1-b480-96a5d1a12f03
+Content-Type: {{contentType}}
+
+{
+  "idZona": "65489ee7-fe5b-471c-b8b4-d6493533dd6e",
+  "descripcion": "Espacio para carro estándar",
+  "tipo": "MOTO",
+  "estado": "DISPONIBLE"
+}
+
+### 4. desactivar la zona
+PATCH {{baseUrl}}/zonas/65489ee7-fe5b-471c-b8b4-d6493533dd6e/activar-desactivar
+
