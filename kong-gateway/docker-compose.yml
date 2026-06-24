@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Base de datos para Kong
   kong-db:
@@ -24,7 +22,7 @@ services:
 
   # Migración de Kong (bootstrap)
   kong-migration:
-    image: kong:3.6-alpine
+    image: kong:latest
     container_name: kong_migration
     command: kong migrations bootstrap
     environment:
@@ -41,7 +39,7 @@ services:
 
   # Kong API Gateway
   kong:
-    image: kong:3.6-alpine
+    image: kong:latest
     container_name: kong_api_gateway
     environment:
       KONG_DATABASE: postgres
@@ -71,7 +69,7 @@ services:
 
   # Kong Manager (UI para administrar Kong)
   kong-manager:
-    image: kong:3.6-alpine
+    image: kong:latest
     container_name: kong_manager_ui
     command: kong start
     environment:
