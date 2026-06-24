@@ -1,4 +1,5 @@
 -- Crear bases de datos
+CREATE DATABASE asignacion_db;
 CREATE DATABASE zonas_db;
 CREATE DATABASE vehiculos_db;
 CREATE DATABASE personas_db;

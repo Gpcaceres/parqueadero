@@ -171,8 +171,16 @@ services:
     environment:
       NODE_ENV: docker
       PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USUARIO: postgres
+      DB_CONTRASENA: postgres
+      DB_NOMBRE: vehiculos_db
     depends_on:
-      - kong
+      postgres:
+        condition: service_healthy
+      kong:
+        condition: service_healthy
     networks:
       - parqueadero-network
     restart: unless-stopped
@@ -196,8 +204,16 @@ services:
     environment:
       NODE_ENV: docker
       PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USUARIO: postgres
+      DB_CONTRASENA: postgres
+      DB_NOMBRE: personas_db
     depends_on:
-      - kong
+      postgres:
+        condition: service_healthy
+      kong:
+        condition: service_healthy
     networks:
       - parqueadero-network
     restart: unless-stopped
