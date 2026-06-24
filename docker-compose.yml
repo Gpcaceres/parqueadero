@@ -97,7 +97,7 @@ services:
       - parqueadero-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8001/status"]
+      test: ["CMD", "kong", "health"]
       interval: 10s
       timeout: 5s
       retries: 5
