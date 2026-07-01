@@ -1,0 +1,19 @@
+@base = http://localhost:3000
+@id_person = b191a5b2-10cf-4246-a5f5-bd466cd4e231
+
+# =============================================
+# PASO 3 - USUARIO (requiere id de la persona)
+# =============================================
+
+### 3.1 Ver usuarios existentes
+GET {{base}}/users
+
+### 3.2 Crear Usuario
+POST {{base}}/users
+Content-Type: application/json
+
+{
+  "id_person": "{{id_person}}",
+  "username": "jperez",
+  "password": "Clave123*"
+}

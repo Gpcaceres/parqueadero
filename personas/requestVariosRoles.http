@@ -1,0 +1,63 @@
+@base = http://localhost:3000
+@id_person = b191a5b2-10cf-4246-a5f5-bd466cd4e231
+@id_rol_admin = 9bba1b09-f610-4c27-b713-83c9716ded70
+@id_rol_cliente = REEMPLAZA-CON-UUID-ROL-CLIENTE
+@id_rol_operador = REEMPLAZA-CON-UUID-ROL-OPERADOR
+
+# =============================================
+# PASO 1 - Ver roles existentes (obtener UUIDs)
+# =============================================
+
+### 1.1 Ver todos los roles
+GET {{base}}/roles
+
+# =============================================
+# PASO 2 - Asignar multiples roles al usuario
+# =============================================
+
+### 2.1 Asignar rol ADMINISTRADOR
+POST {{base}}/user-role
+Content-Type: application/json
+
+{
+  "id_user": "{{id_person}}",
+  "id_role": "{{id_rol_admin}}"
+}
+
+### 2.2 Asignar rol CLIENTE
+POST {{base}}/user-role
+Content-Type: application/json
+
+{
+  "id_user": "{{id_person}}",
+  "id_role": "{{id_rol_cliente}}"
+}
+
+### 2.3 Asignar rol OPERADOR
+POST {{base}}/user-role
+Content-Type: application/json
+
+{
+  "id_user": "{{id_person}}",
+  "id_role": "{{id_rol_operador}}"
+}
+
+# =============================================
+# PASO 3 - Verificar roles asignados
+# =============================================
+
+### 3.1 Ver todos los roles del usuario
+GET {{base}}/user-role/{{id_person}}
+
+# =============================================
+# PASO 4 - Eliminar un rol del usuario
+# =============================================
+
+### 4.1 Quitar rol ADMINISTRADOR
+DELETE {{base}}/user-role/{{id_person}}/{{id_rol_admin}}
+
+### 4.2 Quitar rol CLIENTE
+DELETE {{base}}/user-role/{{id_person}}/{{id_rol_cliente}}
+
+### 4.3 Quitar rol OPERADOR
+DELETE {{base}}/user-role/{{id_person}}/{{id_rol_operador}}

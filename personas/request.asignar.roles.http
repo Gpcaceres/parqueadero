@@ -1,0 +1,18 @@
+@base = http://localhost:3000
+@id_person = b191a5b2-10cf-4246-a5f5-bd466cd4e231
+@id_rol = 9bba1b09-f610-4c27-b713-83c9716ded70
+
+### 1. Ver roles asignados al usuario
+GET {{base}}/user-role/{{id_person}}
+
+### 2. Asignar rol al usuario
+POST {{base}}/user-role
+Content-Type: application/json
+
+{
+  "id_user": "{{id_person}}",
+  "id_role": "{{id_rol}}"
+}
+
+### 3. Ver roles asignados al usuario (verificar asignacion)
+GET {{base}}/user-role/{{id_person}}

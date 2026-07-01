@@ -1,0 +1,49 @@
+@base = http://localhost:3000
+@id_person = f0909e0d-33a8-42b0-b841-092b2cba258b
+
+# =============================================
+# ACTUALIZAR PERSONA
+# =============================================
+
+### 1. Ver persona actual
+GET {{base}}/personas/{{id_person}}
+
+### 2. Actualizar todos los campos
+PATCH {{base}}/personas/{{id_person}}
+Content-Type: application/json
+
+{
+  "first_name": "Juan",
+  "last_name": "Perez",
+  "middle_name": "Carlos",
+  "nationality": "Colombiano",
+  "phone": "3001234567",
+  "address": "Avenida 456 # 78-90"
+}
+
+### 3. Actualizar solo el email
+PATCH {{base}}/personas/{{id_person}}
+Content-Type: application/json
+
+{
+  "email": "nuevo.email@mail.com"
+}
+
+### 4. Actualizar solo el telefono
+PATCH {{base}}/personas/{{id_person}}
+Content-Type: application/json
+
+{
+  "phone": "3109876543"
+}
+
+### 5. Actualizar solo la direccion
+PATCH {{base}}/personas/{{id_person}}
+Content-Type: application/json
+
+{
+  "address": "Calle Nueva 999"
+}
+
+### 6. Ver persona (verificar cambios)
+GET {{base}}/personas/{{id_person}}

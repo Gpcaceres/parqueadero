@@ -1,0 +1,27 @@
+@base = http://localhost:3000
+@id_person = b191a5b2-10cf-4246-a5f5-bd466cd4e231
+
+### 1. Ver usuarios existentes
+GET {{base}}/users
+
+### 2. Desactivar usuario
+PATCH {{base}}/users/{{id_person}}
+Content-Type: application/json
+
+{
+  "active": false
+}
+
+### 3. Ver usuarios (verificar que quedó inactivo)
+GET {{base}}/users
+
+### 4. Activar usuario
+PATCH {{base}}/users/{{id_person}}
+Content-Type: application/json
+
+{
+  "active": true
+}
+
+### 5. Ver usuarios (verificar que quedó activo)
+GET {{base}}/users
