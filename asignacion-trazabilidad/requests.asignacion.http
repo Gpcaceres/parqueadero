@@ -1,0 +1,182 @@
+### ============================================
+### ASIGNACIÓN Y TRAZABILIDAD - TEST FLOW
+### ============================================
+### Flujo completo: GET -> POST -> GET by ID -> GET History -> DELETE -> Verify
+###
+### Variables de prueba (reemplazar con UUIDs reales)
+@baseUrl = http://localhost:8000
+@apiPrefix = /api/api/asignaciones
+@userId = 550e8400-e29b-41d4-a716-446655440000
+@vehicleId = 660e8400-e29b-41d4-a716-446655440001
+@newUserId = 770e8400-e29b-41d4-a716-446655440002
+@newVehicleId = 880e8400-e29b-41d4-a716-446655440003
+
+### ============================================
+### 1. GET BÁSICO - Obtener todas las asignaciones
+### ============================================
+### Obtiene un listado de todas las asignaciones activas
+GET {{baseUrl}}{{apiPrefix}}
+Accept: application/json
+
+### ============================================
+### 2. GET con query param - Solo inactivas
+### ============================================
+### Obtiene todas las asignaciones, incluyendo las revocadas
+GET {{baseUrl}}{{apiPrefix}}?activeOnly=false
+Accept: application/json
+
+### ============================================
+### 3. POST - Crear nueva asignación
+### ============================================
+### Crea una asignación de vehículo a usuario
+### IMPORTANTE: El userId y vehicleId deben existir en las BD
+### Modificar los UUIDs según tus datos reales
+POST {{baseUrl}}{{apiPrefix}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "vehicleId": "{{vehicleId}}",
+  "notes": "Vehículo asignado para pruebas"
+}
+
+### ============================================
+### 4. GET por usuario - Obtener flota del usuario
+### ============================================
+### Obtiene todos los vehículos asignados a un usuario específico
+GET {{baseUrl}}{{apiPrefix}}/usuario/{{userId}}
+Accept: application/json
+
+### ============================================
+### 5. GET estadísticas - Estadísticas del usuario
+### ============================================
+### Obtiene estadísticas de asignaciones de un usuario
+GET {{baseUrl}}{{apiPrefix}}/usuario/{{userId}}/estadisticas
+Accept: application/json
+
+### ============================================
+### 6. GET trazabilidad - Historial de cambios
+### ============================================
+### Obtiene el historial completo de una asignación específica
+GET {{baseUrl}}{{apiPrefix}}/trazabilidad/{{userId}}/{{vehicleId}}
+Accept: application/json
+
+### ============================================
+### 7. GET auditoría - Auditoría por usuario
+### ============================================
+### Obtiene todos los cambios realizados por/en un usuario
+GET {{baseUrl}}{{apiPrefix}}/auditoría/usuario/{{userId}}
+Accept: application/json
+
+### ============================================
+### 8. GET auditoría - Auditoría por vehículo
+### ============================================
+### Obtiene todos los cambios de un vehículo
+GET {{baseUrl}}{{apiPrefix}}/auditoría/vehículo/{{vehicleId}}
+Accept: application/json
+
+### ============================================
+### 9. GET propietario actual
+### ============================================
+### Obtiene quién es el propietario actual de un vehículo
+GET {{baseUrl}}{{apiPrefix}}/vehículo/{{vehicleId}}/propietario
+Accept: application/json
+
+### ============================================
+### 10. GET eventos recientes
+### ============================================
+### Obtiene los últimos eventos de auditoría
+GET {{baseUrl}}{{apiPrefix}}/auditoría/eventos-recientes?limit=10
+Accept: application/json
+
+### ============================================
+### 11. GET resumen de actividad
+### ============================================
+### Obtiene un resumen de actividad general
+GET {{baseUrl}}{{apiPrefix}}/auditoría/resumen
+Accept: application/json
+
+### ============================================
+### 12. GET usuarios más activos
+### ============================================
+### Obtiene los usuarios con más cambios
+GET {{baseUrl}}{{apiPrefix}}/auditoría/usuarios-activos?limit=5
+Accept: application/json
+
+### ============================================
+### 13. DELETE - Revocar asignación
+### ============================================
+### ELIMINA la asignación de un vehículo a un usuario
+### IMPORTANTE: Esto desactiva la asignación, no la elimina de BD
+DELETE {{baseUrl}}{{apiPrefix}}/{{userId}}/{{vehicleId}}
+Accept: application/json
+
+### ============================================
+### 14. VERIFICAR - GET flota después de eliminar
+### ============================================
+### Verifica que la asignación fue revocada (debe estar vacío o sin vehicleId)
+GET {{baseUrl}}{{apiPrefix}}/usuario/{{userId}}
+Accept: application/json
+
+### ============================================
+### 15. VERIFICAR - Historial después de eliminar
+### ============================================
+### Verifica que el historial registra la revocación
+GET {{baseUrl}}{{apiPrefix}}/trazabilidad/{{userId}}/{{vehicleId}}
+Accept: application/json
+
+### ============================================
+### 16. HEALTH CHECK
+### ============================================
+### Verifica el estado del servicio y sus dependencias
+GET {{baseUrl}}{{apiPrefix}}/health
+Accept: application/json
+
+### ============================================
+### FLUJO ALTERNATIVO - Crear múltiples asignaciones
+### ============================================
+
+### POST - Segunda asignación
+POST {{baseUrl}}{{apiPrefix}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "vehicleId": "{{newVehicleId}}",
+  "notes": "Segundo vehículo asignado"
+}
+
+### ============================================
+### BÚSQUEDA AVANZADA
+### ============================================
+### GET auditoría con filtros avanzados
+GET {{baseUrl}}{{apiPrefix}}/auditoría/buscar?userId={{userId}}&actionType=CREACIÓN&limit=10
+Accept: application/json
+
+### ============================================
+### NOTAS DE PRUEBA
+### ============================================
+###
+### 1. Reemplaza los UUIDs de ejemplo con UUIDs reales:
+###    - {{userId}}: ID de una persona que exista
+###    - {{vehicleId}}: ID de un vehículo que exista
+###
+### 2. Los datos deben existir en:
+###    - personas_db (tabla personas)
+###    - vehiculos_db (tabla vehiculos)
+###
+### 3. Para obtener UUIDs válidos, consulta:
+###    - GET http://localhost:3001/personas (Swagger)
+###    - GET http://localhost:3000/vehiculos (Swagger)
+###
+### 4. Orden recomendado de ejecución:
+###    1. GET básico (#1)
+###    2. POST crear (#3)
+###    3. GET por usuario (#4)
+###    4. GET trazabilidad (#6)
+###    5. DELETE revocar (#13)
+###    6. Verificar (#14)
+###
+### 5. El DELETE no elimina de BD, solo marca como inactivo
+###    Los registros de auditoría permanecen para trazabilidad
+###

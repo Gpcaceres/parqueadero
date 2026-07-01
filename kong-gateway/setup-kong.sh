@@ -29,15 +29,8 @@ curl -s -X POST "$KONG_ADMIN/services/asignacion-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "asignacion-api",
-    "paths": ["/api/asignaciones"]
-  }' > /dev/null
-
-# Ruta Swagger
-curl -s -X POST "$KONG_ADMIN/services/asignacion-service/routes" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "asignacion-swagger",
-    "paths": ["/asignacion"]
+    "paths": ["/api/api/asignaciones"],
+    "strip_path": false
   }' > /dev/null
 
 # ============================
@@ -57,7 +50,8 @@ curl -s -X POST "$KONG_ADMIN/services/vehiculos-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "vehiculos-api",
-    "paths": ["/vehiculos"]
+    "paths": ["/vehiculos"],
+    "strip_path": false
   }' > /dev/null
 
 # ============================
@@ -77,7 +71,8 @@ curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "personas-api",
-    "paths": ["/personas"]
+    "paths": ["/personas"],
+    "strip_path": false
   }' > /dev/null
 
 # ============================
@@ -97,7 +92,8 @@ curl -s -X POST "$KONG_ADMIN/services/zonas-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "zonas-api",
-    "paths": ["/zonas"]
+    "paths": ["/api/v1/zonas"],
+    "strip_path": false
   }' > /dev/null
 
 # ============================
@@ -116,20 +112,18 @@ sleep 1
 echo ""
 echo "✅ Kong Gateway configurado exitosamente!"
 echo ""
-echo "🌐 ACCESO DIRECTO A MICROSERVICIOS:"
-echo "  📝 Asignación y Trazabilidad: http://localhost:8000/api/asignaciones"
-echo "  🚗 Vehículos:                 http://localhost:8000/vehiculos"
-echo "  👥 Personas:                  http://localhost:8000/personas"
-echo "  📍 Zonas:                     http://localhost:8000/zonas"
+echo "🌐 ACCESO A TRAVÉS DE KONG (puerto 8000):"
+echo "  📝 Asignación: http://localhost:8000/api/asignaciones"
+echo "  🚗 Vehículos:  http://localhost:8000/vehiculos"
+echo "  👥 Personas:   http://localhost:8000/personas"
+echo "  📍 Zonas:      http://localhost:8000/zonas"
 echo ""
-echo "📚 SWAGGER DOCUMENTATION:"
-echo "  📝 Asignación:   http://localhost:3002/swagger"
-echo "  🚗 Vehículos:    http://localhost:3000/swagger"
-echo "  👥 Personas:     http://localhost:3001/swagger"
-echo "  📍 Zonas:        http://localhost:8080/swagger-ui.html"
+echo "📚 SWAGGER DIRECTO EN PUERTOS NATIVOS:"
+echo "  📝 http://localhost:3002/swagger"
+echo "  🚗 http://localhost:3000/swagger"
+echo "  👥 http://localhost:3001/swagger"
+echo "  📍 http://localhost:8080/swagger-ui.html"
 echo ""
-echo "⚙️  ADMIN PANEL:"
-echo "  Kong Admin API:  http://localhost:8001"
-echo "  Kong Manager UI: http://localhost:8002"
-echo ""
-echo "✨ Todos los servicios están disponibles a través de Kong en puerto 8000"
+echo "⚙️  ADMIN:"
+echo "  Kong Admin: http://localhost:8001"
+echo "  Kong Manager: http://localhost:8002"

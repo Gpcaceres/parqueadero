@@ -144,4 +144,19 @@ export class AssignmentRepository extends Repository<Assignment> {
 
     return query.getCount();
   }
+
+  /**
+   * Obtener todas las asignaciones
+   * @param activeOnly Si true, solo devuelve asignaciones activas
+   * @returns Array de todas las asignaciones
+   */
+  async findAll(activeOnly: boolean = true): Promise<Assignment[]> {
+    const query = this.createQueryBuilder('a');
+
+    if (activeOnly) {
+      query.where('a.isActive = :isActive', { isActive: true });
+    }
+
+    return query.orderBy('a.createdAt', 'DESC').getMany();
+  }
 }

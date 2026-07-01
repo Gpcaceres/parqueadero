@@ -117,6 +117,23 @@ export class AssignmentController {
   }
 
   /**
+   * GET /api/asignaciones
+   * Obtener todas las asignaciones
+   *
+   * Query parameters:
+   * - activeOnly: boolean (opcional, default: true)
+   *
+   * Response: Array de todas las asignaciones
+   */
+  @Get()
+  async getAllAssignments(
+    @Query('activeOnly') activeOnly: string = 'true',
+  ) {
+    this.logger.log(`Obteniendo todas las asignaciones (activas: ${activeOnly})`);
+    return this.assignmentService.getAllAssignments(activeOnly === 'true');
+  }
+
+  /**
    * RF3: GET /api/asignaciones/usuario/:userId
    * Obtener flota de un usuario con detalles de vehículos y usuario
    *

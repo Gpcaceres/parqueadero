@@ -290,4 +290,15 @@ export class AssignmentService {
       revokedAssignments: totalCount - activeCount,
     };
   }
+
+  /**
+   * Obtener todas las asignaciones
+   *
+   * @param activeOnly Si true, solo devuelve asignaciones activas
+   * @returns Array de todas las asignaciones
+   */
+  async getAllAssignments(activeOnly: boolean = true): Promise<Assignment[]> {
+    this.logger.debug(`Obteniendo todas las asignaciones (activas: ${activeOnly})`);
+    return this.assignmentRepository.findAll(activeOnly);
+  }
 }

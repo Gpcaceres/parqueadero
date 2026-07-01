@@ -123,6 +123,24 @@ services:
     restart: unless-stopped
 
   # ============================================
+  # CONFIGURACIÓN AUTOMÁTICA DE KONG
+  # ============================================
+  kong-setup:
+    image: curlimages/curl:latest
+    container_name: kong-setup
+    depends_on:
+      - kong
+    environment:
+      KONG_ADMIN: http://kong:8001
+    volumes:
+      - ./kong-gateway/setup-kong.sh:/setup.sh:ro
+    entrypoint: /bin/sh
+    command: -c "sleep 10 && sh /setup.sh"
+    networks:
+      - parqueadero-network
+    restart: on-failure
+
+  # ============================================
   # ASIGNACIÓN Y TRAZABILIDAD (NestJS)
   # ============================================
   asignacion-trazabilidad:
