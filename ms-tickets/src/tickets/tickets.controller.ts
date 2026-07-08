@@ -20,6 +20,13 @@ import {
   OptionalAuthGuard,
 } from '../auth/optional-auth.guard';
 
+// La IP puede llegar como IPv4 mapeada a IPv6 (::ffff:172.18.0.5) cuando
+// Node corre en Docker; se normaliza a IPv4 puro para pasar la validación
+// de ms-audit (@IsIP('4')).
+function normalizarIp(ip?: string): string | undefined {
+  return ip?.replace(/^::ffff:/, '');
+}
+
 @ApiTags('tickets')
 @Controller('tickets')
 @UseGuards(OptionalAuthGuard)
@@ -46,7 +53,10 @@ export class TicketsController {
     if (id_empleado) {
       createTicketDto.id_empleado = id_empleado;
     }
-    return await this.ticketsService.createTicket(createTicketDto);
+    return await this.ticketsService.createTicket(
+      createTicketDto,
+      normalizarIp(req.ip),
+    );
   }
 
   @Get()
@@ -90,7 +100,11 @@ export class TicketsController {
     if (id_empleado) {
       updateTicketDto.id_empleado = id_empleado;
     }
-    return await this.ticketsService.update(id, updateTicketDto);
+    return await this.ticketsService.update(
+      id,
+      updateTicketDto,
+      normalizarIp(req.ip),
+    );
   }
 
   @Patch(':id/salida')
@@ -105,6 +119,7 @@ export class TicketsController {
       id,
       new Date(body.fecha_salida),
       id_empleado,
+      normalizarIp(req.ip),
     );
   }
 
@@ -113,14 +128,19 @@ export class TicketsController {
   async anularTicket(
     @Param('id') id: string,
     @Body() body: { motivo?: string },
+    @Req() req: any,
   ) {
-    return await this.ticketsService.anularTicket(id, body.motivo);
+    return await this.ticketsService.anularTicket(
+      id,
+      body.motivo,
+      normalizarIp(req.ip),
+    );
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Eliminar un ticket' })
-  async remove(@Param('id') id: string) {
-    await this.ticketsService.remove(id);
+  async remove(@Param('id') id: string, @Req() req: any) {
+    await this.ticketsService.remove(id, normalizarIp(req.ip));
     return { message: 'Ticket eliminado exitosamente' };
   }
 }

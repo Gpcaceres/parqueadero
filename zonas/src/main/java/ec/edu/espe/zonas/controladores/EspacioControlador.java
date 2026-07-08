@@ -3,6 +3,7 @@ package ec.edu.espe.zonas.controladores;
 import ec.edu.espe.zonas.dtos.EspacioRequestDto;
 import ec.edu.espe.zonas.dtos.EspacioResponseDto;
 import ec.edu.espe.zonas.services.EspacioService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,20 +41,26 @@ public class EspacioControlador {
     }
 
     @PostMapping
-    public ResponseEntity<EspacioResponseDto> crearEspacio(@Valid @RequestBody EspacioRequestDto request) {
-        return new ResponseEntity<>(espacioService.crearEspacio(request), HttpStatus.CREATED);
+    public ResponseEntity<EspacioResponseDto> crearEspacio(
+            @Valid @RequestBody EspacioRequestDto request,
+            HttpServletRequest httpRequest) {
+        return new ResponseEntity<>(
+                espacioService.crearEspacio(request, httpRequest.getRemoteAddr()), HttpStatus.CREATED);
     }
 
     @PutMapping("/{idEspacio}")
     public ResponseEntity<EspacioResponseDto> actualizarEspacio(
             @PathVariable UUID idEspacio,
-            @Valid @RequestBody EspacioRequestDto request) {
-        return ResponseEntity.ok(espacioService.actualizarEspacio(idEspacio, request));
+            @Valid @RequestBody EspacioRequestDto request,
+            HttpServletRequest httpRequest) {
+        return ResponseEntity.ok(
+                espacioService.actualizarEspacio(idEspacio, request, httpRequest.getRemoteAddr()));
     }
 
     @PatchMapping("/{idEspacio}/activar-desactivar")
-    public ResponseEntity<Void> activarDesactivar(@PathVariable UUID idEspacio) {
-        espacioService.activarDesactivar(idEspacio);
+    public ResponseEntity<Void> activarDesactivar(
+            @PathVariable UUID idEspacio, HttpServletRequest httpRequest) {
+        espacioService.activarDesactivar(idEspacio, httpRequest.getRemoteAddr());
         return ResponseEntity.noContent().build();
     }
 }

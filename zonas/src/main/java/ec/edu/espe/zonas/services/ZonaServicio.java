@@ -11,11 +11,11 @@ public interface ZonaServicio {
 
     List<ZonaResponseDto> listarZonas();
 
-    ZonaResponseDto crearZona(ZonaRequestDto requestDto);
+    ZonaResponseDto crearZona(ZonaRequestDto requestDto, String ip);
 
-    ZonaResponseDto actualizarZona(UUID idZona, ZonaRequestDto request);
+    ZonaResponseDto actualizarZona(UUID idZona, ZonaRequestDto request, String ip);
 
-    void activarDesactivar(UUID idZona);
+    void activarDesactivar(UUID idZona, String ip);
 
     EstadisticasZonaDto obtenerEstadisticas(UUID idZona);
 }

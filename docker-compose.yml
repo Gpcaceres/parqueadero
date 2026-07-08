@@ -8,6 +8,7 @@
 # - Zonas (8080)
 # - Personas (3001)
 # - Tickets (3003)
+# - Auditoría (3004) + RabbitMQ (5672/15672)
 # ============================================
 
 services:
@@ -142,6 +143,27 @@ services:
     restart: on-failure
 
   # ============================================
+  # RABBITMQ - COLA DE EVENTOS DE AUDITORÍA
+  # ============================================
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-audit
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # Management UI
+    networks:
+      - parqueadero-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
   # ASIGNACIÓN Y TRAZABILIDAD (NestJS)
   # ============================================
   asignacion-trazabilidad:
@@ -162,10 +184,18 @@ services:
       VEHICLE_SERVICE_URL: http://vehiculos:3000
       USER_SERVICE_URL: http://personas:3001
       ZONE_SERVICE_URL: http://zonas:8080
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_EXCHANGE: audit_exchange
+      RABBITMQ_ROUTING_KEY: audit.event
     depends_on:
       postgres:
         condition: service_healthy
       kong:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - parqueadero-network
@@ -195,10 +225,18 @@ services:
       DB_USUARIO: postgres
       DB_CONTRASENA: postgres
       DB_NOMBRE: vehiculos_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_EXCHANGE: audit_exchange
+      RABBITMQ_ROUTING_KEY: audit.event
     depends_on:
       postgres:
         condition: service_healthy
       kong:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - parqueadero-network
@@ -228,10 +266,18 @@ services:
       DB_USUARIO: postgres
       DB_CONTRASENA: postgres
       DB_NOMBRE: personas_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_EXCHANGE: audit_exchange
+      RABBITMQ_ROUTING_KEY: audit.event
     depends_on:
       postgres:
         condition: service_healthy
       kong:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - parqueadero-network
@@ -259,10 +305,18 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      AUDIT_RABBITMQ_EXCHANGE: audit_exchange
+      AUDIT_RABBITMQ_ROUTING_KEY: audit.event
     depends_on:
       postgres:
         condition: service_healthy
       kong:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - parqueadero-network
@@ -295,8 +349,60 @@ services:
       VEHICLE_SERVICE_URL: http://vehiculos:3000
       USER_SERVICE_URL: http://personas:3001
       ZONE_SERVICE_URL: http://zonas:8080
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_EXCHANGE: audit_exchange
+      RABBITMQ_ROUTING_KEY: audit.event
     depends_on:
       postgres:
+        condition: service_healthy
+      kong:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - parqueadero-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # AUDITORÍA (NestJS)
+  # ============================================
+  ms-audit:
+    build:
+      context: ./ms-audit
+      dockerfile: Dockerfile
+    container_name: ms-audit-app
+    ports:
+      - "3004:3004"
+    environment:
+      NODE_ENV: docker
+      PORT: 3004
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: audit_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_QUEUE: audit_queue
+      RABBITMQ_EXCHANGE: audit_exchange
+      RABBITMQ_ROUTING_KEY: audit.event
+      THROTTLE_TTL: 60
+      THROTTLE_LIMIT: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       kong:
         condition: service_healthy
@@ -304,7 +410,7 @@ services:
       - parqueadero-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/"]
       interval: 30s
       timeout: 3s
       retries: 3

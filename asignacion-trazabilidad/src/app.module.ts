@@ -17,6 +17,7 @@ import { AuditService } from './services/audit.service';
 import { VehicleIntegrationService } from './services/vehicle-integration.service';
 import { UserIntegrationService } from './services/user-integration.service';
 import { ZoneIntegrationService } from './services/zone-integration.service';
+import { EventPublisher } from './event-publisher.service';
 
 // Controllers
 import { AssignmentController } from './controllers/assignment.controller';
@@ -63,6 +64,7 @@ import { AssignmentController } from './controllers/assignment.controller';
     VehicleIntegrationService,
     UserIntegrationService,
     ZoneIntegrationService,
+    EventPublisher,
   ],
   exports: [
     AssignmentService,
@@ -70,6 +72,7 @@ import { AssignmentController } from './controllers/assignment.controller';
     VehicleIntegrationService,
     UserIntegrationService,
     ZoneIntegrationService,
+    EventPublisher,
   ],
 })
 export class AppModule {}

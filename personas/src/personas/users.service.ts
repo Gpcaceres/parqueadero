@@ -7,6 +7,7 @@ import { Persona } from './entities/persona.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FactoryPersonas } from './factory/factory-personas';
+import { EventPublisher, AuditEvent } from '../event-publisher.service';
 
 const SALT_ROUNDS = 10;
 const USERNAME_MAX_LENGTH = 15;
@@ -18,9 +19,10 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Persona)
     private readonly personaRepository: Repository<Persona>,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto, ip?: string): Promise<User> {
     const persona = await this.personaRepository.findOneBy({ id_persona: createUserDto.id_user });
     if (!persona) {
       throw new BadRequestException(`No existe una persona con id ${createUserDto.id_user}`);
@@ -33,7 +35,10 @@ export class UsersService {
     await this.personaRepository.save(persona);
 
     const user = FactoryPersonas.crearUsuario(createUserDto.id_user, username, passwordHash);
-    return this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    await this.emitEvent('CREATE', saved, ip);
+
+    return saved;
   }
 
   private normalizeUsernamePart(value: string): string {
@@ -90,13 +95,15 @@ export class UsersService {
     return user;
   }
 
-  async updateActive(id: string, active: boolean): Promise<User> {
+  async updateActive(id: string, active: boolean, ip?: string): Promise<User> {
     const user = await this.findOne(id);
     user.active = active;
-    return this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    await this.emitEvent('UPDATE', saved, ip, { active });
+    return saved;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto, ip?: string): Promise<User> {
     const user = await this.findOne(id);
     if (updateUserDto.username) {
       const existe = await this.userRepository.findOneBy({ username: updateUserDto.username });
@@ -108,10 +115,37 @@ export class UsersService {
     if (updateUserDto.password) {
       user.password_hash = await bcrypt.hash(updateUserDto.password, SALT_ROUNDS);
     }
-    return this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    await this.emitEvent('UPDATE', saved, ip);
+    return saved;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, ip?: string): Promise<void> {
+    const user = await this.findOne(id);
     await this.userRepository.delete({ id_user: id });
+    await this.emitEvent('DELETE', user, ip);
+  }
+
+  // Método auxiliar para publicar eventos de auditoría hacia ms-audit
+  private async emitEvent(
+    accion: string,
+    user: User,
+    ip?: string,
+    datosExtra?: Record<string, any>,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-personas',
+      accion,
+      entidad: 'USUARIO',
+      datos: {
+        id_user: user.id_user,
+        username: user.username,
+        active: user.active,
+        ...datosExtra,
+      },
+      usuario: user.username,
+      ip,
+    };
+    await this.eventPublisher.publish(event);
   }
 }

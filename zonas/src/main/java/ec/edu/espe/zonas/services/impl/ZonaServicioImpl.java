@@ -7,6 +7,7 @@ import ec.edu.espe.zonas.entidades.EstadoEspacio;
 import ec.edu.espe.zonas.entidades.Zona;
 import ec.edu.espe.zonas.repositorios.EspacioRepository;
 import ec.edu.espe.zonas.repositorios.ZonaRepository;
+import ec.edu.espe.zonas.services.AuditEventPublisher;
 import ec.edu.espe.zonas.services.ZonaServicio;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class ZonaServicioImpl implements ZonaServicio {
 
     private final ZonaRepository zonaRepository;
     private final EspacioRepository espacioRepository;
+    private final AuditEventPublisher auditEventPublisher;
 
     @Override
     public List<ZonaResponseDto> listarZonas() {
@@ -30,7 +32,7 @@ public class ZonaServicioImpl implements ZonaServicio {
     }
 
     @Override
-    public ZonaResponseDto crearZona(ZonaRequestDto requestDto) {
+    public ZonaResponseDto crearZona(ZonaRequestDto requestDto, String ip) {
         // Validación adicional: La capacidad no puede ser negativa
         if (requestDto.getCapacidad() != null && requestDto.getCapacidad() < 0) {
             throw new IllegalArgumentException("La capacidad no puede ser un valor negativo");
@@ -49,11 +51,13 @@ public class ZonaServicioImpl implements ZonaServicio {
                 .build();
 
         Zona zonaGuardada = zonaRepository.save(zona);
-        return convertirADto(zonaGuardada);
+        ZonaResponseDto dto = convertirADto(zonaGuardada);
+        auditEventPublisher.publicar("CREATE", "ZONA", dto, ip);
+        return dto;
     }
 
     @Override
-    public ZonaResponseDto actualizarZona(UUID idZona, ZonaRequestDto request) {
+    public ZonaResponseDto actualizarZona(UUID idZona, ZonaRequestDto request, String ip) {
         // Validación adicional: La capacidad no puede ser negativa
         if (request.getCapacidad() != null && request.getCapacidad() < 0) {
             throw new IllegalArgumentException("La capacidad no puede ser un valor negativo");
@@ -74,11 +78,13 @@ public class ZonaServicioImpl implements ZonaServicio {
         }
 
         Zona zonaActualizada = zonaRepository.save(zonaExistente);
-        return convertirADto(zonaActualizada);
+        ZonaResponseDto dto = convertirADto(zonaActualizada);
+        auditEventPublisher.publicar("UPDATE", "ZONA", dto, ip);
+        return dto;
     }
 
     @Override
-    public void activarDesactivar(UUID idZona) {
+    public void activarDesactivar(UUID idZona, String ip) {
         Zona zonaExistente = zonaRepository.findById(idZona)
                 .orElseThrow(() -> new RuntimeException("Zona no encontrada con ID: " + idZona));
 
@@ -111,7 +117,8 @@ public class ZonaServicioImpl implements ZonaServicio {
         int nuevoEstado = zonaExistente.getEstado() == 1 ? 0 : 1;
         zonaExistente.setEstado(nuevoEstado);
 
-        zonaRepository.save(zonaExistente);
+        Zona zonaActualizada = zonaRepository.save(zonaExistente);
+        auditEventPublisher.publicar("UPDATE", "ZONA", convertirADto(zonaActualizada), ip);
     }
 
     @Override

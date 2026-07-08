@@ -4,6 +4,7 @@ import ec.edu.espe.zonas.dtos.EstadisticasZonaDto;
 import ec.edu.espe.zonas.dtos.ZonaRequestDto;
 import ec.edu.espe.zonas.dtos.ZonaResponseDto;
 import ec.edu.espe.zonas.services.ZonaServicio;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,20 +27,26 @@ public class ZonaControlador {
     }
 
     @PostMapping
-    public ResponseEntity<ZonaResponseDto> crearZona(@Valid @RequestBody ZonaRequestDto request) {
-        return new ResponseEntity<>(zonaServicio.crearZona(request), HttpStatus.CREATED);
+    public ResponseEntity<ZonaResponseDto> crearZona(
+            @Valid @RequestBody ZonaRequestDto request,
+            HttpServletRequest httpRequest) {
+        return new ResponseEntity<>(
+                zonaServicio.crearZona(request, httpRequest.getRemoteAddr()), HttpStatus.CREATED);
     }
 
     @PutMapping("/{idZona}")
     public ResponseEntity<ZonaResponseDto> actualizarZona(
-            @PathVariable UUID idZona, 
-            @Valid @RequestBody ZonaRequestDto request) {
-        return ResponseEntity.ok(zonaServicio.actualizarZona(idZona, request));
+            @PathVariable UUID idZona,
+            @Valid @RequestBody ZonaRequestDto request,
+            HttpServletRequest httpRequest) {
+        return ResponseEntity.ok(
+                zonaServicio.actualizarZona(idZona, request, httpRequest.getRemoteAddr()));
     }
 
     @PatchMapping("/{idZona}/activar-desactivar")
-    public ResponseEntity<Void> activarDesactivar(@PathVariable UUID idZona) {
-        zonaServicio.activarDesactivar(idZona);
+    public ResponseEntity<Void> activarDesactivar(
+            @PathVariable UUID idZona, HttpServletRequest httpRequest) {
+        zonaServicio.activarDesactivar(idZona, httpRequest.getRemoteAddr());
         return ResponseEntity.noContent().build();
     }
 

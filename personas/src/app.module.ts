@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PersonasModule } from './personas/personas.module';
 import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
+import { EventPublisherModule } from './event-publisher.module';
 import { Persona } from './personas/entities/persona.entity';
 import { User } from './personas/entities/user.entity';
 import { Role } from './personas/entities/role.entity';
@@ -16,6 +17,7 @@ import { Permission } from './personas/entities/permission.entity';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    EventPublisherModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

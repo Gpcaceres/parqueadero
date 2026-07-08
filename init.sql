@@ -4,6 +4,7 @@ CREATE DATABASE zonas_db;
 CREATE DATABASE vehiculos_db;
 CREATE DATABASE personas_db;
 CREATE DATABASE tickets_db;
+CREATE DATABASE audit_db;
 
 -- Conectarse a zonas_db y crear tablas si es necesario
 \c zonas_db;

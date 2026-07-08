@@ -10,6 +10,7 @@ import { Persona } from '../personas/entities/persona.entity';
 import { Role } from '../personas/entities/role.entity';
 import { UserRole } from '../personas/entities/user-role.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { EventPublisher, AuditEvent } from '../event-publisher.service';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +24,25 @@ export class AuthService {
     @InjectRepository(UserRole)
     private userRolesRepository: Repository<UserRole>,
     private jwtService: JwtService,
+    private readonly eventPublisher: EventPublisher,
   ) {}
+
+  private async emitEvent(
+    accion: string,
+    username: string,
+    ip?: string,
+    datosExtra?: Record<string, any>,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-personas',
+      accion,
+      entidad: 'USUARIO',
+      datos: datosExtra,
+      usuario: username,
+      ip,
+    };
+    await this.eventPublisher.publish(event);
+  }
 
   async validateUser(username: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({
@@ -46,9 +65,11 @@ export class AuthService {
     return user;
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, ip?: string) {
     const user = await this.validateUser(loginDto.username, loginDto.password);
     const activeRoleNames = this.getActiveRoleNames(user);
+
+    await this.emitEvent('LOGIN', user.username, ip, { roles: activeRoleNames });
 
     const payload = {
       sub: user.id_user,
@@ -70,7 +91,7 @@ export class AuthService {
     };
   }
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto, ip?: string) {
     const username = await this.generateUniqueUsername(
       registerDto.firstName,
       registerDto.lastName,
@@ -113,6 +134,11 @@ export class AuthService {
       });
       await this.userRolesRepository.save(userRole);
     }
+
+    await this.emitEvent('CREATE', user.username, ip, {
+      id_user: user.id_user,
+      roles: ['cliente'],
+    });
 
     const payload = {
       sub: user.id_user,

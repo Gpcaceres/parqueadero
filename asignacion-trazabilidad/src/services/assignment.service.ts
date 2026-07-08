@@ -9,6 +9,7 @@ import { Assignment } from '../entities/assignment.entity';
 import { AssignmentRepository } from '../repositories/assignment.repository';
 import { CreateAssignmentDto } from '../dtos/create-assignment.dto';
 import { AuditService } from './audit.service';
+import { EventPublisher, AuditEvent } from '../event-publisher.service';
 
 /**
  * Service: Assignment
@@ -28,7 +29,26 @@ export class AssignmentService {
   constructor(
     private assignmentRepository: AssignmentRepository,
     private auditService: AuditService,
+    private readonly eventPublisher: EventPublisher,
   ) {}
+
+  // Publica hacia ms-audit (evento cross-service), independiente del
+  // AuditService interno que ya lleva su propio historial en audit_trail.
+  private async emitEvent(
+    accion: string,
+    assignment: Assignment,
+    ip?: string,
+    datosExtra?: Record<string, any>,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-asignacion',
+      accion,
+      entidad: 'ASIGNACION',
+      datos: { ...assignment, ...datosExtra },
+      ip,
+    };
+    await this.eventPublisher.publish(event);
+  }
 
   /**
    * RF1: Crear asignación de vehículo a propietario
@@ -45,6 +65,7 @@ export class AssignmentService {
   async assignVehicleToUser(
     createAssignmentDto: CreateAssignmentDto,
     performedByUserId: string,
+    ip?: string,
   ): Promise<Assignment> {
     const { userId, vehicleId, notes } = createAssignmentDto;
 
@@ -99,6 +120,7 @@ export class AssignmentService {
       performedByUserId,
       { notes },
     );
+    await this.emitEvent('CREATE', savedAssignment, ip);
 
     this.logger.log(
       `Vehículo ${vehicleId} asignado exitosamente a usuario ${userId}`,
@@ -119,6 +141,7 @@ export class AssignmentService {
     userId: string,
     vehicleId: string,
     performedByUserId: string,
+    ip?: string,
   ): Promise<Assignment> {
     this.logger.debug(
       `Revocando asignación: usuario ${userId}, vehículo ${vehicleId}`,
@@ -154,6 +177,7 @@ export class AssignmentService {
       previousState,
       revokedAssignment,
     );
+    await this.emitEvent('DELETE', revokedAssignment, ip);
 
     this.logger.log(
       `Asignación revocada: usuario ${userId}, vehículo ${vehicleId}`,

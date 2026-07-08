@@ -6,11 +6,13 @@ import {
   Param,
   Body,
   Query,
+  Req,
   HttpStatus,
   HttpCode,
   Logger,
   BadRequestException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AssignmentService } from '../services/assignment.service';
 import { AuditService } from '../services/audit.service';
 import { VehicleIntegrationService } from '../services/vehicle-integration.service';
@@ -24,6 +26,13 @@ import { AuditTrailFilterDto } from '../dtos/audit-trail.dto';
 // conectado todavía). performedByUserId es una columna uuid NOT NULL en
 // AuditTrail, así que no puede ser el literal "system".
 const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
+
+// La IP puede llegar como IPv4 mapeada a IPv6 (::ffff:172.18.0.5) cuando
+// Node corre en Docker; se normaliza a IPv4 puro para pasar la validación
+// de ms-audit (@IsIP('4')).
+function normalizarIp(ip?: string): string | undefined {
+  return ip?.replace(/^::ffff:/, '');
+}
 
 /**
  * Controller: Assignment
@@ -70,6 +79,7 @@ export class AssignmentController {
   @HttpCode(HttpStatus.CREATED)
   async createAssignment(
     @Body() createAssignmentDto: CreateAssignmentDto,
+    @Req() req: Request,
   ) {
     this.logger.log(
       `Creando asignación: usuario ${createAssignmentDto.userId}, vehículo ${createAssignmentDto.vehicleId}`,
@@ -114,6 +124,7 @@ export class AssignmentController {
     const assignment = await this.assignmentService.assignVehicleToUser(
       createAssignmentDto,
       performedByUserId,
+      normalizarIp(req.ip),
     );
 
     // Enriquecer respuesta con detalles de usuario y vehículo
@@ -212,6 +223,7 @@ export class AssignmentController {
   async revokeAssignment(
     @Param('userId') userId: string,
     @Param('vehicleId') vehicleId: string,
+    @Req() req: Request,
   ) {
     this.logger.log(
       `Revocando asignación: usuario ${userId}, vehículo ${vehicleId}`,
@@ -223,6 +235,7 @@ export class AssignmentController {
       userId,
       vehicleId,
       performedByUserId,
+      normalizarIp(req.ip),
     );
   }
 

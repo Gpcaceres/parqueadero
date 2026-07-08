@@ -7,6 +7,7 @@ import { TicketsController } from './tickets.controller';
 import { Ticket } from './entities/ticket.entity';
 import { OptionalAuthGuard } from '../auth/optional-auth.guard';
 import { ZoneIntegrationService } from './zone-integration.service';
+import { EventPublisher } from '../event-publisher.service';
 
 @Module({
   imports: [
@@ -17,7 +18,12 @@ import { ZoneIntegrationService } from './zone-integration.service';
     }),
   ],
   controllers: [TicketsController],
-  providers: [TicketsService, OptionalAuthGuard, ZoneIntegrationService],
+  providers: [
+    TicketsService,
+    OptionalAuthGuard,
+    ZoneIntegrationService,
+    EventPublisher,
+  ],
   exports: [TicketsService],
 })
 export class TicketsModule {}

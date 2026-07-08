@@ -5,6 +5,7 @@ import { Ticket, EstadoTicket } from './entities/ticket.entity';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { ZoneIntegrationService } from './zone-integration.service';
+import { EventPublisher, AuditEvent } from '../event-publisher.service';
 
 @Injectable()
 export class TicketsService {
@@ -12,9 +13,26 @@ export class TicketsService {
     @InjectRepository(Ticket)
     private ticketsRepository: Repository<Ticket>,
     private readonly zoneIntegrationService: ZoneIntegrationService,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
-  async createTicket(createTicketDto: CreateTicketDto): Promise<Ticket> {
+  private async emitEvent(
+    accion: string,
+    ticket: Ticket,
+    ip?: string,
+    datosExtra?: Record<string, any>,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-tickets',
+      accion,
+      entidad: 'TICKET',
+      datos: { ...ticket, ...datosExtra },
+      ip,
+    };
+    await this.eventPublisher.publish(event);
+  }
+
+  async createTicket(createTicketDto: CreateTicketDto, ip?: string): Promise<Ticket> {
     // Validar que el espacio esté disponible
     const existingTicket = await this.ticketsRepository.findOne({
       where: {
@@ -47,6 +65,7 @@ export class TicketsService {
 
     // El espacio pasa a OCUPADO mientras el ticket esté activo
     await this.zoneIntegrationService.marcarOcupado(ticketGuardado.id_espacio);
+    await this.emitEvent('CREATE', ticketGuardado, ip);
 
     return ticketGuardado;
   }
@@ -78,7 +97,7 @@ export class TicketsService {
     });
   }
 
-  async update(id: string, updateTicketDto: UpdateTicketDto): Promise<Ticket> {
+  async update(id: string, updateTicketDto: UpdateTicketDto, ip?: string): Promise<Ticket> {
     const ticket = await this.findOne(id);
 
     const espacioAnterior = ticket.id_espacio;
@@ -134,10 +153,17 @@ export class TicketsService {
       ]);
     }
 
+    await this.emitEvent('UPDATE', ticketGuardado, ip);
+
     return ticketGuardado;
   }
 
-  async registrarSalida(id: string, fecha_salida: Date, id_empleado?: string): Promise<Ticket> {
+  async registrarSalida(
+    id: string,
+    fecha_salida: Date,
+    id_empleado?: string,
+    ip?: string,
+  ): Promise<Ticket> {
     const ticket = await this.findOne(id);
 
     if (ticket.estado_ticket !== EstadoTicket.ACTIVO) {
@@ -154,11 +180,12 @@ export class TicketsService {
 
     // Ya se cobró/pagó: el espacio vuelve a estar DISPONIBLE
     await this.zoneIntegrationService.marcarDisponible(ticketGuardado.id_espacio);
+    await this.emitEvent('UPDATE', ticketGuardado, ip, { accionTicket: 'SALIDA' });
 
     return ticketGuardado;
   }
 
-  async anularTicket(id: string, motivo?: string): Promise<Ticket> {
+  async anularTicket(id: string, motivo?: string, ip?: string): Promise<Ticket> {
     const ticket = await this.findOne(id);
     const eraActivo = ticket.estado_ticket === EstadoTicket.ACTIVO;
     ticket.estado_ticket = EstadoTicket.ANULADO;
@@ -169,10 +196,15 @@ export class TicketsService {
       await this.zoneIntegrationService.marcarDisponible(ticketGuardado.id_espacio);
     }
 
+    await this.emitEvent('UPDATE', ticketGuardado, ip, {
+      accionTicket: 'ANULAR',
+      motivo,
+    });
+
     return ticketGuardado;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, ip?: string): Promise<void> {
     const ticket = await this.findOne(id);
     const eraActivo = ticket.estado_ticket === EstadoTicket.ACTIVO;
     await this.ticketsRepository.remove(ticket);
@@ -181,6 +213,8 @@ export class TicketsService {
     if (eraActivo) {
       await this.zoneIntegrationService.marcarDisponible(ticket.id_espacio);
     }
+
+    await this.emitEvent('DELETE', ticket, ip);
   }
 
   async obtenerEstadisticas(): Promise<any> {

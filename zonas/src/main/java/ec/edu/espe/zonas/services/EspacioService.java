@@ -16,9 +16,9 @@ public interface EspacioService {
 
     List<EspacioResponseDto> listarEspaciosActivos();
 
-    EspacioResponseDto crearEspacio(EspacioRequestDto requestDto);
+    EspacioResponseDto crearEspacio(EspacioRequestDto requestDto, String ip);
 
-    EspacioResponseDto actualizarEspacio(UUID idEspacio, EspacioRequestDto request);
+    EspacioResponseDto actualizarEspacio(UUID idEspacio, EspacioRequestDto request, String ip);
 
-    void activarDesactivar(UUID idEspacio);
+    void activarDesactivar(UUID idEspacio, String ip);
 }

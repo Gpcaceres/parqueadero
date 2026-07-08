@@ -118,11 +118,32 @@ curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
   }' > /dev/null
 
 # ============================
+# AUDITORÍA
+# ============================
+echo "🧾 Registrando Auditoría..."
+
+curl -s -X POST "$KONG_ADMIN/services" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "audit-service",
+    "url": "http://ms-audit:3004"
+  }' > /dev/null
+
+# Ruta API
+curl -s -X POST "$KONG_ADMIN/services/audit-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "audit-api",
+    "paths": ["/audit"],
+    "strip_path": false
+  }' > /dev/null
+
+# ============================
 # PLUGINS CORS
 # ============================
 echo "🔌 Agregando CORS a todos los servicios..."
 
-for service in asignacion-service vehiculos-service personas-service zonas-service tickets-service; do
+for service in asignacion-service vehiculos-service personas-service zonas-service tickets-service audit-service; do
   curl -s -X POST "$KONG_ADMIN/services/$service/plugins" \
     -H "Content-Type: application/json" \
     -d '{"name": "cors", "config": {"origins": ["*"]}}' > /dev/null 2>&1
@@ -139,6 +160,7 @@ echo "  🚗 Vehículos:  http://localhost:8000/vehiculos"
 echo "  👥 Personas:   http://localhost:8000/personas"
 echo "  📍 Zonas:      http://localhost:8000/zonas"
 echo "  🎫 Tickets:    http://localhost:8000/tickets"
+echo "  🧾 Auditoría:  http://localhost:8000/audit"
 echo ""
 echo "📚 SWAGGER DIRECTO EN PUERTOS NATIVOS:"
 echo "  📝 http://localhost:3002/swagger"

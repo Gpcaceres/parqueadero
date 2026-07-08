@@ -13,6 +13,7 @@ import ec.edu.espe.zonas.entidades.EstadoEspacio;
 import ec.edu.espe.zonas.entidades.Zona;
 import ec.edu.espe.zonas.repositorios.EspacioRepository;
 import ec.edu.espe.zonas.repositorios.ZonaRepository;
+import ec.edu.espe.zonas.services.AuditEventPublisher;
 import ec.edu.espe.zonas.services.EspacioService;
 import ec.edu.espe.zonas.utils.UtilsMappers;
 import jakarta.transaction.Transactional;
@@ -21,10 +22,11 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class EspacioServicioImpl implements EspacioService {
-    
+
     private final EspacioRepository repositorioEspacio;
     private final ZonaRepository zonaRepository;
     private final UtilsMappers mapper;
+    private final AuditEventPublisher auditEventPublisher;
 
     @Override
     @Transactional
@@ -65,7 +67,7 @@ public class EspacioServicioImpl implements EspacioService {
 
     @Override
     @Transactional
-    public EspacioResponseDto crearEspacio(EspacioRequestDto dto) {
+    public EspacioResponseDto crearEspacio(EspacioRequestDto dto, String ip) {
         Zona objZona = zonaRepository.findById(dto.getIdZona())
                 .orElseThrow(() -> new RuntimeException("Zona no encontrada con ID: " + dto.getIdZona()));
         
@@ -94,8 +96,10 @@ public class EspacioServicioImpl implements EspacioService {
         }
         
         Espacio espacioGuardado = repositorioEspacio.save(nuevoEspacio);
-        
-        return mapper.toResponseDto(espacioGuardado);
+        EspacioResponseDto responseDto = mapper.toResponseDto(espacioGuardado);
+        auditEventPublisher.publicar("CREATE", "ESPACIO", responseDto, ip);
+
+        return responseDto;
     }
     
     /**
@@ -124,7 +128,7 @@ public class EspacioServicioImpl implements EspacioService {
 
     @Override
     @Transactional
-    public EspacioResponseDto actualizarEspacio(UUID idEspacio, EspacioRequestDto request) {
+    public EspacioResponseDto actualizarEspacio(UUID idEspacio, EspacioRequestDto request, String ip) {
         Espacio espacioExistente = repositorioEspacio.findById(idEspacio)
                 .orElseThrow(() -> new RuntimeException("Espacio no encontrado con ID: " + idEspacio));
         
@@ -142,23 +146,26 @@ public class EspacioServicioImpl implements EspacioService {
         }
         
         Espacio espacioActualizado = repositorioEspacio.save(espacioExistente);
-        
-        return mapper.toResponseDto(espacioActualizado);
+        EspacioResponseDto responseDto = mapper.toResponseDto(espacioActualizado);
+        auditEventPublisher.publicar("UPDATE", "ESPACIO", responseDto, ip);
+
+        return responseDto;
     }
 
     @Override
     @Transactional
-    public void activarDesactivar(UUID idEspacio) {
+    public void activarDesactivar(UUID idEspacio, String ip) {
         Espacio espacio = repositorioEspacio.findById(idEspacio)
                 .orElseThrow(() -> new RuntimeException("Espacio no encontrado con ID: " + idEspacio));
-        
+
         // Alternar entre DISPONIBLE e INACTIVO
         if (espacio.getEstadoEspacio() == EstadoEspacio.INACTIVO) {
             espacio.setEstadoEspacio(EstadoEspacio.DISPONIBLE);
         } else {
             espacio.setEstadoEspacio(EstadoEspacio.INACTIVO);
         }
-        
-        repositorioEspacio.save(espacio);
+
+        Espacio espacioActualizado = repositorioEspacio.save(espacio);
+        auditEventPublisher.publicar("UPDATE", "ESPACIO", mapper.toResponseDto(espacioActualizado), ip);
     }
 }
