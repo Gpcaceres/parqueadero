@@ -31,7 +31,7 @@ public class Espacio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private UUID idEspacio;
 
     // Aumentado a 32 para que quepa el ejemplo: ESPACIO-1A-ZONA-A1
     @Column(unique = true, nullable = false, length = 32)
@@ -50,7 +50,7 @@ public class Espacio {
 
     // Relación: Muchos espacios pertenecen a una zona
     @ManyToOne
-    @JoinColumn(name = "zona_id", nullable = false)
+    @JoinColumn(name = "id_zona", nullable = false)
     private Zona zona;
 
     @CreationTimestamp

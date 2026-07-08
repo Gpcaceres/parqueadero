@@ -33,9 +33,9 @@ export class VehiculosService {
     return this.vehiculoRepository.find();
   }
 
-  async findOne(id: number): Promise<Vehiculo> {
+  async findOne(id: string): Promise<Vehiculo> {
     const existe = await this.vehiculoRepository.findOne({
-      where: { id: id }
+      where: { id_vehiculo: id }
     });
 
     if (!existe) {
@@ -45,11 +45,11 @@ export class VehiculosService {
   }
 
 
-  update(id: number, updateVehiculoDto: UpdateVehiculoDto) {
+  update(id: string, updateVehiculoDto: UpdateVehiculoDto) {
     return `This action updates a #${id} vehiculo`;
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} vehiculo`;
   }
 }

@@ -1,0 +1,22 @@
+@baseUrl = http://localhost:3003
+@contentType = application/json
+
+### 1. Obtener todos los tickets
+GET {{baseUrl}}/tickets
+Accept: application/json
+
+### 2. Obtener ticket por ID (usa la variable compartida ticketId)
+GET {{baseUrl}}/tickets/{{ticketId}}
+Accept: application/json
+
+### 3. Obtener tickets de usuario (usa la variable compartida userId)
+GET {{baseUrl}}/tickets/usuario/{{userId}}
+Accept: application/json
+
+### 4. Obtener ticket activo por espacio (usa la variable compartida espacioId)
+GET {{baseUrl}}/tickets/espacio/{{espacioId}}
+Accept: application/json
+
+### 5. Obtener estadísticas de tickets
+GET {{baseUrl}}/tickets/estadisticas
+Accept: application/json

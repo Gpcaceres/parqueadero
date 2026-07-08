@@ -19,6 +19,12 @@ import { ZoneIntegrationService } from '../services/zone-integration.service';
 import { CreateAssignmentDto } from '../dtos/create-assignment.dto';
 import { AuditTrailFilterDto } from '../dtos/audit-trail.dto';
 
+// UUID nil usado para representar al "sistema" como actor de auditoría
+// cuando no hay un usuario autenticado real (este servicio no tiene JWT
+// conectado todavía). performedByUserId es una columna uuid NOT NULL en
+// AuditTrail, así que no puede ser el literal "system".
+const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
+
 /**
  * Controller: Assignment
  * Endpoints para gestión de asignaciones y trazabilidad
@@ -103,7 +109,7 @@ export class AssignmentController {
     }
 
     // Crear asignación (UUID temporal para performedBy)
-    const performedByUserId = 'system'; // En producción, obtenido de JWT
+    const performedByUserId = SYSTEM_ACTOR_ID; // En producción, obtenido de JWT
 
     const assignment = await this.assignmentService.assignVehicleToUser(
       createAssignmentDto,
@@ -211,7 +217,7 @@ export class AssignmentController {
       `Revocando asignación: usuario ${userId}, vehículo ${vehicleId}`,
     );
 
-    const performedByUserId = 'system'; // En producción, obtenido de JWT
+    const performedByUserId = SYSTEM_ACTOR_ID; // En producción, obtenido de JWT
 
     return this.assignmentService.revokeAssignment(
       userId,

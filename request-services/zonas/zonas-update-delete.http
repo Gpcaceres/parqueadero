@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:8080/api/v1
+@contentType = application/json
+
+### 1. Actualizar zona (usa la variable compartida zonaId)
+# tipoZona debe ser uno de: VIP, REGULAR, INTERNA, EXTERNA, PREFERENCIAL
+PUT {{baseUrl}}/zonas/{{zonaId}}
+Content-Type: {{contentType}}
+
+{
+  "nombre": "Zona Prueba Actualizada",
+  "descripcion": "Zona actualizada desde prueba HTTP",
+  "tipoZona": "REGULAR",
+  "capacidad": 15
+}
+
+### 2. Activar / desactivar zona
+PATCH {{baseUrl}}/zonas/{{zonaId}}/activar-desactivar
+Accept: application/json

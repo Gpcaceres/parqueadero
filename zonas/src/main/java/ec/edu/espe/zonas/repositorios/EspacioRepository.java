@@ -15,17 +15,17 @@ public interface EspacioRepository extends JpaRepository<Espacio, UUID> {
     boolean existsByCodigo(String codigo);
 
     // Busca todos los espacios que pertenecen a una zona específica
-    List<Espacio> findByZonaId(UUID idZona);
+    List<Espacio> findByZonaIdZona(UUID idZona);
 
     // Busca espacios por zona y estado específico
-    List<Espacio> findByZonaIdAndEstadoEspacio(UUID idZona, EstadoEspacio estadoEspacio);
+    List<Espacio> findByZonaIdZonaAndEstadoEspacio(UUID idZona, EstadoEspacio estadoEspacio);
 
     // Busca todos los espacios por estado
     List<Espacio> findByEstadoEspacio(EstadoEspacio estadoEspacio);
 
     // Cuenta cuántos espacios están OCUPADOS en una zona específica
-    long countByZonaIdAndEstadoEspacio(UUID idZona, EstadoEspacio estadoEspacio);
+    long countByZonaIdZonaAndEstadoEspacio(UUID idZona, EstadoEspacio estadoEspacio);
 
     // Verifica si existe al menos un espacio ocupado en la zona
-    boolean existsByZonaIdAndEstadoEspacio(UUID idZona, EstadoEspacio estadoEspacio);
+    boolean existsByZonaIdZonaAndEstadoEspacio(UUID idZona, EstadoEspacio estadoEspacio);
 }

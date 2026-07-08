@@ -1,0 +1,100 @@
+@baseUrlPersonas = http://localhost:3001
+@baseUrlVehiculos = http://localhost:3000
+@baseUrlZonas = http://localhost:8080/api/v1
+@baseUrlTickets = http://localhost:3003
+@contentType = application/json
+
+# Caso: la cuenta fija recaudador (userRecaudadorId/recaudadorUserName, ver
+# a-asociar/variables.http) cierra un ticket (registra salida y cobro).
+# Permisos del rol recaudador (ver roles-permissions.seed.ts): tickets.read,
+# tickets.create, tickets.update, spaces.read, spaces.update.
+# Asignar el rol exige un token con rol admin o root (ver user-role.controller.ts).
+#
+# ms-tickets tiene un OptionalAuthGuard (no bloquea sin token, pero si mandas
+# uno válido, popula request.user). Si request.user tiene rol admin,
+# recaudador o root, "id_empleado" se autocompleta desde ese token en
+# create/update/salida -- por eso los pasos 4, 5 y 6 mandan el Authorization
+# del recaudador, y YA NO se manda "id_empleado" a mano en el body.
+
+### 0. Login como admin (para asignar/quitar el rol recaudador)
+# @name loginAdmin
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 1. Asignar rol recaudador a la cuenta recaudador
+POST {{baseUrlPersonas}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_user": "{{userRecaudadorId}}",
+  "id_role": "{{roleIdRecaudador}}"
+}
+
+### 2. Login para confirmar el rol "recaudador" en el JWT
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{recaudadorUserName}}",
+  "password": "{{recaudadorPassword}}"
+}
+
+### 3. Verificar que el vehículo y el espacio (con su zona) existen
+GET {{baseUrlVehiculos}}/vehiculos/{{vehiculoId}}
+Accept: application/json
+
+###
+GET {{baseUrlZonas}}/espacios/zona/{{zonaId}}
+Accept: application/json
+
+### 4. Crear el ticket que el recaudador va a procesar
+# @name crearTicket
+POST {{baseUrlTickets}}/tickets
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "id_usuario": "{{userId}}",
+  "id_espacio": "{{espacioId}}",
+  "id_vehiculo": "{{vehiculoPlaca}}",
+  "tipo_vehiculo": "Auto",
+  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+}
+
+### 5. Registrar la salida del vehículo (id_empleado se autocompleta del token)
+PATCH {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}/salida
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "fecha_salida": "2026-07-08T11:00:00.000Z"
+}
+
+### 6. Registrar el cobro (id_empleado se autocompleta del token, no se manda a mano)
+PATCH {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "valor_recaudado": 3.5
+}
+
+### 7. Ver el ticket ya cerrado
+GET {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Accept: application/json
+
+### 8. Cleanup: eliminar el ticket creado en el paso 4
+DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Accept: application/json
+
+### 9. Quitar el rol recaudador de la cuenta recaudador (cleanup)
+DELETE {{baseUrlPersonas}}/user-role/{{userRecaudadorId}}/{{roleIdRecaudador}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json

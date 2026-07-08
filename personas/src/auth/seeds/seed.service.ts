@@ -42,20 +42,18 @@ export class SeedService {
       });
 
       if (!existing) {
-        await this.permissionsRepository.create({
+        const permission = this.permissionsRepository.create({
           name: permConfig.name,
           description: permConfig.description,
           active: true,
         });
+        await this.permissionsRepository.save(permission);
         this.logger.debug(`  ✓ Permiso creado: ${permConfig.name}`);
       } else {
         this.logger.debug(`  ⊘ Permiso ya existe: ${permConfig.name}`);
       }
     }
 
-    await this.permissionsRepository.save(
-      await this.permissionsRepository.find(),
-    );
     this.logger.log(`✅ Permisos creados/verificados`);
   }
 

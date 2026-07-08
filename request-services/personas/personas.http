@@ -1,0 +1,44 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+
+### 1. Listar todas las personas
+GET {{baseUrl}}/personas
+Accept: application/json
+
+### 2. Crear persona
+POST {{baseUrl}}/personas
+Content-Type: {{contentType}}
+
+{
+  "dni": "1717481699",
+  "email": "ptcd@test.com",
+  "first_name": "Germans",
+  "middle_name": "PCc",
+  "last_name": "Caceres",
+ 
+  "nationality": "Peru",
+  "phone": "3001234567",
+  "address": "Calle 123 # 45-67"
+}
+
+### 3. Obtener persona por ID (usa la variable compartida personaId)
+GET {{baseUrl}}/personas/{{personaId}}
+Accept: application/json
+
+### 4. Actualizar persona
+PATCH {{baseUrl}}/personas/{{personaId}}
+Content-Type: {{contentType}}
+
+{
+  "first_name": "Juan",
+  "last_name": "Perez",
+  "middle_name": "Carlos",
+  "nationality": "Colombia",
+  "phone": "3109876543",
+  "address": "Avenida 456 # 78-90"
+}
+
+### 5. Eliminar persona
+# Borra en cascada el usuario asociado (y sus roles) gracias al ON DELETE CASCADE
+DELETE {{baseUrl}}/personas/{{personaId}}
+Accept: application/json

@@ -18,7 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ZonaResponseDto {
 
-    private UUID id;
+    private UUID idZona;
     private String nombre;
     private String codigo;
     private String descripcion;

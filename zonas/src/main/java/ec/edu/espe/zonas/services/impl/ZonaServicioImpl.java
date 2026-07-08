@@ -86,7 +86,7 @@ public class ZonaServicioImpl implements ZonaServicio {
         if (zonaExistente.getEstado() == 1) { // Si está activa y se quiere desactivar
             // Verificar si hay espacios OCUPADOS en la zona
             boolean hayEspaciosOcupados = espacioRepository
-                    .existsByZonaIdAndEstadoEspacio(idZona, EstadoEspacio.OCUPADO);
+                    .existsByZonaIdZonaAndEstadoEspacio(idZona, EstadoEspacio.OCUPADO);
             
             if (hayEspaciosOcupados) {
                 throw new RuntimeException(
@@ -97,7 +97,7 @@ public class ZonaServicioImpl implements ZonaServicio {
             
             // Opcionalmente, también verificar espacios en MANTENIMIENTO
             boolean hayEspaciosEnMantenimiento = espacioRepository
-                    .existsByZonaIdAndEstadoEspacio(idZona, EstadoEspacio.MANTENIMIENTO);
+                    .existsByZonaIdZonaAndEstadoEspacio(idZona, EstadoEspacio.MANTENIMIENTO);
             
             if (hayEspaciosEnMantenimiento) {
                 throw new RuntimeException(
@@ -120,11 +120,11 @@ public class ZonaServicioImpl implements ZonaServicio {
                 .orElseThrow(() -> new RuntimeException("Zona no encontrada con ID: " + idZona));
 
         // Contar espacios por estado
-        long totalEspacios = espacioRepository.findByZonaId(idZona).size();
-        long disponibles = espacioRepository.countByZonaIdAndEstadoEspacio(idZona, EstadoEspacio.DISPONIBLE);
-        long ocupados = espacioRepository.countByZonaIdAndEstadoEspacio(idZona, EstadoEspacio.OCUPADO);
-        long enMantenimiento = espacioRepository.countByZonaIdAndEstadoEspacio(idZona, EstadoEspacio.MANTENIMIENTO);
-        long inactivos = espacioRepository.countByZonaIdAndEstadoEspacio(idZona, EstadoEspacio.INACTIVO);
+        long totalEspacios = espacioRepository.findByZonaIdZona(idZona).size();
+        long disponibles = espacioRepository.countByZonaIdZonaAndEstadoEspacio(idZona, EstadoEspacio.DISPONIBLE);
+        long ocupados = espacioRepository.countByZonaIdZonaAndEstadoEspacio(idZona, EstadoEspacio.OCUPADO);
+        long enMantenimiento = espacioRepository.countByZonaIdZonaAndEstadoEspacio(idZona, EstadoEspacio.MANTENIMIENTO);
+        long inactivos = espacioRepository.countByZonaIdZonaAndEstadoEspacio(idZona, EstadoEspacio.INACTIVO);
 
         // Calcular porcentaje de ocupación (excluyendo espacios inactivos)
         long espaciosActivos = totalEspacios - inactivos;
@@ -189,10 +189,10 @@ public class ZonaServicioImpl implements ZonaServicio {
     // Método auxiliar para no repetir código al convertir Entidad -> DTO
     private ZonaResponseDto convertirADto(Zona zona) {
         // Contar espacios totales de esta zona
-        long totalEspacios = espacioRepository.findByZonaId(zona.getId()).size();
-        
+        long totalEspacios = espacioRepository.findByZonaIdZona(zona.getIdZona()).size();
+
         return ZonaResponseDto.builder()
-                .id(zona.getId())
+                .idZona(zona.getIdZona())
                 .nombre(zona.getNombre())
                 .codigo(zona.getCodigo())
                 .descripcion(zona.getDescripcion())

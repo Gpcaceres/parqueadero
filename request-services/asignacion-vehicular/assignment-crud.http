@@ -1,0 +1,48 @@
+@baseUrl = http://localhost:3002
+@contentType = application/json
+
+# NOTA: la ruta real del servicio es /api/api/asignaciones (prefijo global "api"
+# + prefijo "api/asignaciones" del controller quedan duplicados). No es un typo.
+
+### 1. Obtener todas las asignaciones
+GET {{baseUrl}}/api/api/asignaciones
+Accept: application/json
+
+### 2. Obtener asignaciones incluyendo inactivas
+GET {{baseUrl}}/api/api/asignaciones?activeOnly=false
+Accept: application/json
+
+### 3. Crear asignación de vehículo a usuario
+# Ya corregidos: el bug de tipo (vehiculos ahora usa UUID), las rutas
+# "/api/personas" y "/api/vehiculos" (debían ser sin /api), y el chequeo
+# isUserActive() que buscaba campos "activo"/"isActive" en vez de "active".
+#
+# NOTA pendiente: esto todavía falla con 500 ("invalid input syntax for type
+# uuid: system") porque assignment.controller.ts:106 hardcodea
+# performedByUserId = 'system' (comentario propio: "En producción, obtenido
+# de JWT") — este microservicio no tiene autenticación real conectada. Es un
+# bug distinto (falta de auth), no de tipos/rutas; no se resuelve aquí.
+POST {{baseUrl}}/api/api/asignaciones
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "vehicleId": "{{vehiculoId}}",
+  "notes": "Asignación para prueba automatizada"
+}
+
+### 4. Obtener flota de usuario (usa la variable compartida userId)
+GET {{baseUrl}}/api/api/asignaciones/usuario/{{userId}}
+Accept: application/json
+
+### 5. Obtener estadísticas de usuario
+GET {{baseUrl}}/api/api/asignaciones/usuario/{{userId}}/estadisticas
+Accept: application/json
+
+### 6. Obtener propietario actual de vehículo
+GET {{baseUrl}}/api/api/asignaciones/vehículo/660e8400-e29b-41d4-a716-446655440001/propietario
+Accept: application/json
+
+### 7. Revocar asignación
+DELETE {{baseUrl}}/api/api/asignaciones/{{userId}}/660e8400-e29b-41d4-a716-446655440001
+Accept: application/json

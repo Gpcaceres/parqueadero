@@ -1,0 +1,15 @@
+@baseUrl = http://localhost:3003
+@contentType = application/json
+
+# Las pruebas de creación de tickets (que son, en esencia, la asignación de un
+# ticket a un usuario + vehículo + espacio) se movieron a:
+#
+#   request-services/asignar-tickets/usuario.http
+#   request-services/asignar-tickets/clientes.http
+#   request-services/asignar-tickets/recaudador.http
+#   request-services/asignar-tickets/administrador.http
+#
+# Ahí se cubre el flujo completo por rol, incluyendo la verificación previa
+# del vehículo y su zona/espacio antes de crear el ticket. Este archivo queda
+# solo para lectura/actualización/eliminación genéricas (ver tickets-read.http
+# y tickets-update-delete.http).

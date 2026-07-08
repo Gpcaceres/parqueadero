@@ -1,0 +1,38 @@
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### 1. Crear Auto
+POST {{baseUrl}}/vehiculos
+Content-Type: {{contentType}}
+
+{
+  "tipo": "Auto",
+  "datos": {
+    "placa": "ABC-4791",
+    "marca": "Toyota",
+    "modelo": "Corolla",
+    "color": "Blanco",
+    "anio": 2023,
+    "clasificacion": "HIBRIDO",
+    "numeroPuertas": 4,
+    "capacidadMaletero": 450,
+    "capacidadCarga": 500
+  }
+}
+
+### 2. Crear Motocicleta
+POST {{baseUrl}}/vehiculos
+Content-Type: {{contentType}}
+
+{
+  "tipo": "Moto",
+  "datos": {
+    "placa": "MOT-1234",
+    "marca": "Honda",
+    "modelo": "CBR600",
+    "color": "Rojo",
+    "anio": 2022,
+    "clasificacion": "GASOLINA",
+    "tipo": "Deportiva"
+  }
+}

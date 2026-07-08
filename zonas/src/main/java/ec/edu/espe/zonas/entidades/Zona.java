@@ -33,7 +33,7 @@ public class Zona {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private UUID idZona;
 
     @Column(unique = true, nullable = false, length = 32)
     private String nombre;

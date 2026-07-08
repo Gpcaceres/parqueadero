@@ -21,9 +21,9 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const persona = await this.personaRepository.findOneBy({ id: createUserDto.id_person });
+    const persona = await this.personaRepository.findOneBy({ id_persona: createUserDto.id_user });
     if (!persona) {
-      throw new BadRequestException(`No existe una persona con id ${createUserDto.id_person}`);
+      throw new BadRequestException(`No existe una persona con id ${createUserDto.id_user}`);
     }
 
     const username = await this.generateUniqueUsername(persona);
@@ -32,7 +32,7 @@ export class UsersService {
     persona.email = `${username}@test.com`;
     await this.personaRepository.save(persona);
 
-    const user = FactoryPersonas.crearUsuario(createUserDto.id_person, username, passwordHash);
+    const user = FactoryPersonas.crearUsuario(createUserDto.id_user, username, passwordHash);
     return this.userRepository.save(user);
   }
 
@@ -81,7 +81,7 @@ export class UsersService {
 
   async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
-      where: { id_person: id },
+      where: { id_user: id },
       relations: { persona: true, userRoles: true },
     });
     if (!user) {
@@ -100,7 +100,7 @@ export class UsersService {
     const user = await this.findOne(id);
     if (updateUserDto.username) {
       const existe = await this.userRepository.findOneBy({ username: updateUserDto.username });
-      if (existe && existe.id_person !== id) {
+      if (existe && existe.id_user !== id) {
         throw new BadRequestException(`El username ${updateUserDto.username} ya está en uso`);
       }
       user.username = updateUserDto.username;
@@ -112,6 +112,6 @@ export class UsersService {
   }
 
   async remove(id: string): Promise<void> {
-    await this.userRepository.delete({ id_person: id });
+    await this.userRepository.delete({ id_user: id });
   }
 }

@@ -1,0 +1,75 @@
+PARQUEADERO - COMANDOS PARA EJECUTAR
+
+Si los scripts no funcionan, ejecuta estos comandos en PowerShell o CMD:
+
+=== PASO 1: DETENER ===
+docker-compose down
+
+=== PASO 2: LIMPIAR ===
+docker system prune -a -f --volumes
+
+=== PASO 3: CONFIGURAR NPM ===
+npm config set fetch-timeout 120000
+npm config set fetch-retries 5
+npm config set registry https://registry.npmjs.org/
+
+=== PASO 4: RECONSTRUIR ===
+docker-compose up --build -d
+
+=== PASO 5: ESPERAR ===
+(Espera 20-25 minutos mientras se descargan dependencias y se construyen imagenes)
+
+=== PASO 6: VERIFICAR ===
+docker-compose ps
+
+=== PASO 7: HEALTH CHECKS ===
+curl http://localhost:3001/health
+curl http://localhost:3003/health
+curl http://localhost:3000/health
+
+=== PASO 8: ACCEDER ===
+Kong Gateway:  http://localhost:8000
+Personas:      http://localhost:3001/swagger
+Tickets:       http://localhost:3003/swagger
+Vehiculos:     http://localhost:3000/swagger
+
+=== PRUEBA DE LOGIN ===
+Username: galopez11
+Password: Password123!
+
+=== SI HAY ERRORES ===
+
+Error de red:
+1. Cierra Docker Desktop completamente
+2. Abre Task Manager
+3. Busca "Docker Desktop" y termina el proceso
+4. Espera 30 segundos
+5. Abre Docker Desktop nuevamente
+6. Espera 2 minutos a que esté listo
+7. Vuelve a ejecutar: docker-compose up --build -d
+
+Error de puerto:
+netstat -ano | findstr :3001
+taskkill /PID <numero> /F
+
+Error de espacio:
+docker system df
+docker system prune -a --volumes
+
+=== SCRIPTS DISPONIBLES ===
+
+BUILD.bat - Reconstruccion simple
+SOLUCION_COMPLETA.bat - Reconstruccion con validacion
+
+=== NECESITAS AYUDA? ===
+
+Ver logs:
+docker-compose logs personas
+docker-compose logs ms-tickets
+docker-compose logs vehiculos
+
+Entrar a contenedor:
+docker-compose exec personas sh
+
+Reiniciar un servicio:
+docker-compose restart personas

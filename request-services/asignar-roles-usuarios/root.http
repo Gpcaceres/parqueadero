@@ -1,0 +1,91 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+
+# Asignar/quitar el rol root ahora exige un token con rol ROOT (admin puede
+# gestionar cualquier rol EXCEPTO admin/root).
+
+### 0. Login como root (necesario para gestionar el rol root)
+# @name loginRoot
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{rootUserName}}",
+  "password": "{{rootPassword}}"
+}
+
+### 1. Asignar rol root al usuario compartido (userId + roleIdRoot)
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdRoot}}"
+}
+
+### 2. Ver roles asignados al usuario (un usuario puede tener varios)
+GET {{baseUrl}}/user-role/{{userId}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json
+
+### 3. Login para confirmar el rol "root" en el JWT
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### 4. Probar acceso a endpoint que solo permite root (asignar permisos a un rol)
+POST {{baseUrl}}/roles/{{roleIdAdmin}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "permissionIds": []
+}
+
+### 5. Desactivar el rol root (sin eliminar la asignación)
+PATCH {{baseUrl}}/user-role/{{userId}}/{{roleIdRoot}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "active": false
+}
+
+### 6. Login otra vez: "root" ya NO debe aparecer en roles
+# @name loginSinRoot
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### 7. Repetir el endpoint solo-root: ahora debe dar 403
+POST {{baseUrl}}/roles/{{roleIdAdmin}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginSinRoot.response.body.$.access_token}}
+
+{
+  "permissionIds": []
+}
+
+### 8. Reactivar el rol root
+PATCH {{baseUrl}}/user-role/{{userId}}/{{roleIdRoot}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "active": true
+}
+
+### 9. Quitar por completo la asignación del rol root (cleanup)
+DELETE {{baseUrl}}/user-role/{{userId}}/{{roleIdRoot}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json

@@ -1,0 +1,35 @@
+@baseUrl = http://localhost:3003
+@contentType = application/json
+
+# NOTA: "registrar salida" (2) exige que el ticket esté "activo"; si {{ticketId}}
+# ya fue cerrado (salida/anulado) en una corrida previa, crea uno nuevo primero
+# en request-services/asignar-tickets/ y actualiza la variable ticketId.
+
+### 1. Actualizar ticket (usa la variable compartida ticketId/espacioId)
+PATCH {{baseUrl}}/tickets/{{ticketId}}
+Content-Type: {{contentType}}
+
+{
+  "id_espacio": "{{espacioId}}",
+  "fecha_hora_ingreso": "2026-07-06T10:30:00.000Z"
+}
+
+### 2. Registrar salida de ticket
+PATCH {{baseUrl}}/tickets/{{ticketId}}/salida
+Content-Type: {{contentType}}
+
+{
+  "fecha_salida": "2026-07-06T13:00:00.000Z"
+}
+
+### 3. Anular ticket
+PATCH {{baseUrl}}/tickets/{{ticketId}}/anular
+Content-Type: {{contentType}}
+
+{
+  "motivo": "Prueba de anulación"
+}
+
+### 4. Eliminar ticket
+DELETE {{baseUrl}}/tickets/{{ticketId}}
+Accept: application/json

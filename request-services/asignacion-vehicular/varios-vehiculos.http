@@ -1,0 +1,111 @@
+@baseUrlAsignacion = http://localhost:3002
+@contentType = application/json
+
+# ============================================================
+# Este archivo SOLO asigna vehículos ya existentes (ids tomados de
+# .vscode/settings.json: vehiculoId, vehiculoId2, vehiculoId3). Para crear
+# vehículos nuevos, usa request-services/vehiculos/vehiculos-create.http y
+# agrega el "id_vehiculo" de la respuesta como variable en settings.json.
+#
+# Caso: un mismo cliente (userId) puede tener VARIOS vehículos asignados a
+# la vez. La restricción real es la contraria: un mismo par (usuario,
+# vehículo) no se puede duplicar (índice único userId+vehicleId), y un
+# vehículo solo puede estar activo en un propietario a la vez — pero un
+# propietario sí puede tener tantos vehículos como quiera.
+#
+# Los endpoints de asignacion-trazabilidad no tienen ningún guard de auth,
+# así que no hace falta login aquí.
+# ============================================================
+
+### ============================================================
+### PASO 1/3: asignar el primer vehículo al cliente
+### ============================================================
+
+### 1. Asignar vehiculoId al cliente compartido (userId)
+POST {{baseUrlAsignacion}}/api/api/asignaciones
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "vehicleId": "{{vehiculoId}}",
+  "notes": "Vehículo principal"
+}
+
+### 2. Ver flota del cliente (debe tener 1 vehículo)
+GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}?enriched=false
+Accept: application/json
+
+### ============================================================
+### PASO 2/3: agregar un segundo vehículo (no reemplaza al primero)
+### ============================================================
+
+### 3. Asignar vehiculoId2 al mismo cliente
+POST {{baseUrlAsignacion}}/api/api/asignaciones
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "vehicleId": "{{vehiculoId2}}",
+  "notes": "Segundo vehículo"
+}
+
+### 4. Ver flota del cliente (debe tener 2 vehículos)
+GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}?enriched=false
+Accept: application/json
+
+### ============================================================
+### PASO 3/3: agregar un tercer vehículo
+### ============================================================
+
+### 5. Asignar vehiculoId3 al mismo cliente
+POST {{baseUrlAsignacion}}/api/api/asignaciones
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "vehicleId": "{{vehiculoId3}}",
+  "notes": "Tercer vehículo"
+}
+
+### 6. Ver flota del cliente (debe tener los 3 vehículos)
+GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}?enriched=false
+Accept: application/json
+
+### 7. Ver estadísticas del cliente (debe reportar 3 vehículos activos)
+GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}/estadisticas
+Accept: application/json
+
+### ============================================================
+### Intentar duplicar: mismo usuario + mismo vehículo -> debe fallar
+### ============================================================
+
+### 8. Reintentar asignar vehiculoId (ya asignado) -> 409 esperado
+POST {{baseUrlAsignacion}}/api/api/asignaciones
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "vehicleId": "{{vehiculoId}}",
+  "notes": "Intento duplicado"
+}
+
+### ============================================================
+### CLEANUP: revocar las 3 asignaciones (los vehículos NO se borran,
+### son fixtures compartidos como el resto de variables de settings.json)
+### ============================================================
+
+### 9. Revocar vehiculoId
+DELETE {{baseUrlAsignacion}}/api/api/asignaciones/{{userId}}/{{vehiculoId}}
+Accept: application/json
+
+### 10. Revocar vehiculoId2
+DELETE {{baseUrlAsignacion}}/api/api/asignaciones/{{userId}}/{{vehiculoId2}}
+Accept: application/json
+
+### 11. Revocar vehiculoId3
+DELETE {{baseUrlAsignacion}}/api/api/asignaciones/{{userId}}/{{vehiculoId3}}
+Accept: application/json
+
+### 12. Ver flota del cliente (debe quedar vacía otra vez)
+GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}?enriched=false
+Accept: application/json

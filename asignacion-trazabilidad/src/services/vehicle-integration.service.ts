@@ -29,7 +29,7 @@ export class VehicleIntegrationService {
       this.logger.debug(`Obteniendo detalles del vehículo ${vehicleId}`);
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.vehicleServiceUrl}/api/vehiculos/${vehicleId}`),
+        this.httpService.get(`${this.vehicleServiceUrl}/vehiculos/${vehicleId}`),
       );
 
       return response.data;
@@ -52,7 +52,7 @@ export class VehicleIntegrationService {
       this.logger.debug(`Obteniendo detalles de ${vehicleIds.length} vehículos`);
 
       const response = await firstValueFrom(
-        this.httpService.post(`${this.vehicleServiceUrl}/api/vehiculos/batch`, {
+        this.httpService.post(`${this.vehicleServiceUrl}/vehiculos/batch`, {
           ids: vehicleIds,
         }),
       );
@@ -88,7 +88,7 @@ export class VehicleIntegrationService {
       this.logger.debug(`Obteniendo vehículos de tipo ${type}`);
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.vehicleServiceUrl}/api/vehiculos/tipo/${type}`),
+        this.httpService.get(`${this.vehicleServiceUrl}/vehiculos/tipo/${type}`),
       );
 
       return response.data;
@@ -110,7 +110,7 @@ export class VehicleIntegrationService {
 
       const response = await firstValueFrom(
         this.httpService.get(
-          `${this.vehicleServiceUrl}/api/vehiculos/categoria/${category}`,
+          `${this.vehicleServiceUrl}/vehiculos/categoria/${category}`,
         ),
       );
 

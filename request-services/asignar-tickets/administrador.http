@@ -1,0 +1,66 @@
+@baseUrlPersonas = http://localhost:3001
+@baseUrlVehiculos = http://localhost:3000
+@baseUrlZonas = http://localhost:8080/api/v1
+@baseUrlTickets = http://localhost:3003
+@contentType = application/json
+
+# Caso: el administrador (cuenta fija userAdminId/adminUsername, ver
+# a-asociar/variables.http) supervisa y gestiona cualquier ticket, no solo
+# los propios. Permisos del rol admin: tickets.read, tickets.create,
+# tickets.update (no incluye tickets.delete; solo "root" tiene "*").
+#
+# ms-tickets autocompleta "id_empleado" con el usuario del token cuando su
+# rol es admin/recaudador/root (OptionalAuthGuard) -- por eso el paso 5 manda
+# el Authorization del admin y no incluye "id_empleado" en el body.
+
+### 1. Login como admin
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 2. Ver todos los tickets (de cualquier usuario)
+GET {{baseUrlTickets}}/tickets
+Accept: application/json
+
+### 3. Ver estadísticas generales de tickets
+GET {{baseUrlTickets}}/tickets/estadisticas
+Accept: application/json
+
+### 4. Verificar que el vehículo y el espacio (con su zona) existen
+GET {{baseUrlVehiculos}}/vehiculos/{{vehiculoId}}
+Accept: application/json
+
+###
+GET {{baseUrlZonas}}/espacios/zona/{{zonaId}}
+Accept: application/json
+
+### 5. Crear un ticket para poder anularlo/eliminarlo a continuación
+# @name crearTicket
+POST {{baseUrlTickets}}/tickets
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "id_usuario": "{{userAdminId}}",
+  "id_espacio": "{{espacioId}}",
+  "id_vehiculo": "{{vehiculoPlaca}}",
+  "tipo_vehiculo": "Auto",
+  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+}
+
+### 6. Anular el ticket (motivo administrativo)
+PATCH {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}/anular
+Content-Type: {{contentType}}
+
+{
+  "motivo": "Anulado por el administrador"
+}
+
+### 7. Eliminar el ticket
+DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Accept: application/json

@@ -1,0 +1,318 @@
+@baseUrlPersonas = http://localhost:3001
+@baseUrlVehiculos = http://localhost:3000
+@baseUrlZonas = http://localhost:8080/api/v1
+@baseUrlTickets = http://localhost:3003
+@baseUrlAsignacion = http://localhost:3002
+@contentType = application/json
+
+# ============================================================
+# COMO FUNCIONAN LAS VARIABLES COMPARTIDAS
+# ============================================================
+# Un "@variable" declarado en un archivo .http SOLO existe dentro de ese
+# mismo archivo (limitación de la extensión REST Client). Por eso, para
+# compartir valores (ids, tokens) entre TODOS los .http del proyecto, las
+# variables reales viven en:
+#
+#   .vscode/settings.json -> "rest-client.environmentVariables.$shared"
+#
+# Cualquier variable definida ahí queda disponible como {{nombre}} en
+# CUALQUIER archivo .http del proyecto, sin tener que elegir un
+# "Environment" en la barra inferior de VS Code (el entorno especial
+# "$shared" siempre está activo, incluso con "No Environment" seleccionado).
+#
+# Flujo de trabajo:
+#   1. Ejecuta las peticiones de este archivo (de arriba hacia abajo, botón
+#      "Send Request") para crear/renovar los datos base de prueba.
+#   2. Copia el dato que necesites de la respuesta (el id, ahora siempre
+#      nombrado con su entidad: "id_persona", "id_role", "id_vehiculo",
+#      "idZona", "idEspacio", "id_ticket") y pégalo en la variable
+#      correspondiente dentro de .vscode/settings.json.
+#   3. Corre cualquier otro .http del proyecto (personas, users, roles,
+#      vehiculos, zonas, tickets...): ya usan esos valores automáticamente,
+#      sin tocar nada en esos archivos.
+#
+# Variables ya precargadas en .vscode/settings.json con datos reales:
+#   personaId            -> persona base a asociar (cuenta "descartable" para pruebas)
+#   userId                -> usuario creado sobre esa persona (mismo id que la persona)
+#   clienteUserName / clientePassword -> credenciales de ese usuario
+#   userAdminId           -> id del usuario admin (jperez)
+#   adminUserName / adminPassword -> credenciales de esa cuenta admin
+#   userRootId            -> id del usuario root (rsystem)
+#   rootUserName / rootPassword -> credenciales de esa cuenta root
+#   userRecaudadorId      -> id del usuario recaudador (crecaudador)
+#   recaudadorUserName / recaudadorPassword -> credenciales de esa cuenta recaudador
+#   roleIdAdmin, roleIdRoot, roleIdCliente, roleIdRecaudador -> ids de roles
+#   vehiculoId, vehiculoId2, vehiculoId3 -> vehículos base (servicio vehiculos)
+#   vehiculoPlaca         -> placa del vehículo de "vehiculoId" (¡ojo!: el
+#                 campo "id_vehiculo" de un ticket es la PLACA, no el UUID de
+#                 vehiculos -- por eso existe esta variable aparte)
+#   zonaId                -> zona base (servicio zonas)
+#   espacioId             -> espacio base dentro de esa zona
+#   ticketId              -> ticket base (servicio tickets)
+#
+# Jerarquía de las 3 cuentas fijas (ver POST /user-role en
+# personas/src/personas/user-role.service.ts):
+#   userId     -> cuenta genérica/descartable, sin rol fijo (se le asignan y
+#                 quitan roles en las pruebas de asignar-roles-usuarios/asignar-tickets)
+#   userAdminId (jperez)  -> siempre debe tener el rol admin. Admin puede asignar
+#                 cualquier rol EXCEPTO admin/root.
+#   userRootId (rsystem) -> siempre debe tener el rol root. Root puede asignar
+#                 cualquier rol, incluido admin/root. Es la única cuenta capaz
+#                 de crear/recrear la cuenta admin si esta se pierde.
+#   userRecaudadorId (crecaudador) -> siempre debe tener el rol recaudador
+#                 activo (se usa en asignar-tickets/recaudador.http).
+# ============================================================
+
+### 1. Crear persona root (cuenta fija con rol root)
+# @name crearPersonaRoot
+# Ya existe con estos datos; cambia el dni/email si la recreas.
+POST {{baseUrlPersonas}}/personas
+Content-Type: {{contentType}}
+
+{
+  "dni": "0650269202",
+  "email": "root@test.com",
+  "first_name": "Root",
+  "last_name": "System",
+  "nationality": "Ecuador",
+  "phone": "3009990000",
+  "address": "N/A"
+}
+
+# Copia "id_persona" de la respuesta -> variable "userRootId" en .vscode/settings.json
+
+### 2. Crear usuario root sobre esa persona (solo requiere id_user + password)
+# @name crearUsuarioRoot
+POST {{baseUrlPersonas}}/users
+Content-Type: {{contentType}}
+
+{
+  "id_user": "{{userRootId}}",
+  "password": "Clave123*"
+}
+
+# Confirma que "username" en la respuesta sea "rsystem" -> variable "rootUserName"
+
+### 3. Asignar el rol root a la cuenta root
+# IMPORTANTE - bootstrap: la PRIMERA vez que existe el sistema no hay ningún
+# usuario con rol root todavía para autorizar esta asignación (POST /user-role
+# exige rol admin o root, ver user-role.controller.ts). Por eso este paso en
+# particular NO se puede hacer por la API la primera vez: hay que insertarlo
+# directo en la base de datos, por ejemplo:
+#
+#   docker exec parqueadero-postgres psql -U postgres -d personas_db -c \
+#     "INSERT INTO user_role (id_user, id_role, active) VALUES ('{{userRootId}}', '{{roleIdRoot}}', true);"
+#
+# Una vez que la cuenta root existe y tiene el rol, todo lo demás (incluida
+# la re-creación de la cuenta admin) SÍ se puede hacer vía API con su token
+# (ver paso 4 y 6).
+
+### 4. Login con la cuenta root
+# @name loginRoot
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{rootUserName}}",
+  "password": "{{rootPassword}}"
+}
+
+### 5. Crear persona admin (cuenta fija con rol admin)
+# @name crearPersonaAdmin
+# Sin middle_name para que el username autogenerado sea exactamente "jperez"
+# (Juan + Perez). Ya existe con estos datos; cambia el dni/email si la recreas.
+POST {{baseUrlPersonas}}/personas
+Content-Type: {{contentType}}
+
+{
+  "dni": "1717481699",
+  "email": "jperez@test.com",
+  "first_name": "Juan",
+  "last_name": "Perez",
+  "nationality": "Ecuador",
+  "phone": "3001234567",
+  "address": "Calle 123 # 45-67"
+}
+
+# Copia "id_persona" de la respuesta -> variable "userAdminId" en .vscode/settings.json
+
+### 6. Crear usuario admin sobre esa persona (solo requiere id_user + password)
+# @name crearUsuarioAdmin
+POST {{baseUrlPersonas}}/users
+Content-Type: {{contentType}}
+
+{
+  "id_user": "{{userAdminId}}",
+  "password": "Clave123*"
+}
+
+# Confirma que "username" en la respuesta sea "jperez" -> variable "adminUserName"
+
+### 7. Asignar el rol admin a la cuenta admin (requiere el token de loginRoot,
+# ya que solo root puede asignar el rol admin)
+POST {{baseUrlPersonas}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "id_user": "{{userAdminId}}",
+  "id_role": "{{roleIdAdmin}}"
+}
+
+### 8. Crear persona recaudador (cuenta fija con rol recaudador)
+# @name crearPersonaRecaudador
+# Ya existe con estos datos; cambia el dni/email si la recreas.
+POST {{baseUrlPersonas}}/personas
+Content-Type: {{contentType}}
+
+{
+  "dni": "1940401407",
+  "email": "crecaudador@test.com",
+  "first_name": "Carlos",
+  "last_name": "Recaudador",
+  "nationality": "Ecuador",
+  "phone": "3007778888",
+  "address": "N/A"
+}
+
+# Copia "id_persona" de la respuesta -> variable "userRecaudadorId" en .vscode/settings.json
+
+### 9. Crear usuario recaudador sobre esa persona (solo requiere id_user + password)
+# @name crearUsuarioRecaudador
+POST {{baseUrlPersonas}}/users
+Content-Type: {{contentType}}
+
+{
+  "id_user": "{{userRecaudadorId}}",
+  "password": "Clave123*"
+}
+
+# Confirma que "username" en la respuesta sea "crecaudador" -> variable "recaudadorUserName"
+
+### 10. Asignar el rol recaudador a la cuenta recaudador (con el token de loginRoot)
+POST {{baseUrlPersonas}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "id_user": "{{userRecaudadorId}}",
+  "id_role": "{{roleIdRecaudador}}"
+}
+
+### 11. Crear persona base (la persona "descartable" que se va a asociar)
+# @name crearPersona
+# Ya existe con estos datos (dni/email únicos). Si quieres una persona nueva,
+# cambia el dni y el email antes de reenviar.
+POST {{baseUrlPersonas}}/personas
+Content-Type: {{contentType}}
+
+{
+  "dni": "0337025381",
+  "email": "asociar@test.com",
+  "first_name": "Ana",
+  "middle_name": "Maria",
+  "last_name": "Torres",
+  "nationality": "Colombia",
+  "phone": "3005556677",
+  "address": "Av. Central 100"
+}
+
+# Copia "id_persona" de la respuesta -> variable "personaId" en .vscode/settings.json
+
+### 12. Crear usuario para la persona base (solo requiere id_user + password)
+# @name crearUsuarioAsociar
+# El username y el email de la persona se generan solos a partir de su nombre
+POST {{baseUrlPersonas}}/users
+Content-Type: {{contentType}}
+
+{
+  "id_user": "{{personaId}}",
+  "password": "Clave123*"
+}
+
+# Copia "id_user" -> variable "userId", y "username" -> variable "clienteUserName"
+
+### 13. Login con el usuario administrador (para endpoints protegidos, ej. /roles)
+# @name loginAdmin
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 14. Crear vehículo base
+# @name crearVehiculo
+POST {{baseUrlVehiculos}}/vehiculos
+Content-Type: {{contentType}}
+
+{
+  "tipo": "Auto",
+  "datos": {
+    "placa": "SHR-0001",
+    "marca": "Chevrolet",
+    "modelo": "Spark",
+    "color": "Azul",
+    "anio": 2024,
+    "clasificacion": "GASOLINA",
+    "numeroPuertas": 4,
+    "capacidadMaletero": 300,
+    "capacidadCarga": 350
+  }
+}
+
+# Copia "id_vehiculo" -> variable "vehiculoId"
+
+### 15. Crear zona base
+# @name crearZona
+POST {{baseUrlZonas}}/zonas
+Content-Type: {{contentType}}
+
+{
+  "nombre": "Zona Compartida",
+  "descripcion": "Zona base para variables compartidas",
+  "tipoZona": "REGULAR",
+  "capacidad": 20
+}
+
+# Copia "idZona" -> variable "zonaId"
+
+### 16. Crear espacio base dentro de la zona
+# @name crearEspacio
+POST {{baseUrlZonas}}/espacios
+Content-Type: {{contentType}}
+
+{
+  "idZona": "{{zonaId}}",
+  "descripcion": "Espacio compartido para pruebas",
+  "tipo": "CARRO",
+  "estado": "DISPONIBLE"
+}
+
+# Copia "idEspacio" -> variable "espacioId"
+
+### 17. Crear ticket base
+# @name crearTicket
+POST {{baseUrlTickets}}/tickets
+Content-Type: {{contentType}}
+
+{
+  "id_usuario": "{{userId}}",
+  "id_espacio": "{{espacioId}}",
+  "id_vehiculo": "{{vehiculoPlaca}}",
+  "tipo_vehiculo": "Auto",
+  "fecha_hora_ingreso": "2026-07-08T01:00:00.000Z"
+}
+
+# Copia "id_ticket" -> variable "ticketId"
+
+### NOTA - Asignación vehículo-usuario (servicio asignacion-trazabilidad)
+# No se incluye un "crearAsignacion" aquí porque hoy siempre falla, por 3 bugs
+# de integración entre microservicios (ver detalle en
+# request-services/asignacion-vehicular/assignment-crud.http):
+#  1) llama a "/api/personas/:id" en vez de "/personas/:id",
+#  2) llama a "/api/vehiculos/:id" en vez de "/vehiculos/:id",
+#  3) exige que "vehicleId" sea UUID, pero vehiculos usa ids numéricos.
+# No son cosas que se resuelvan agregando variables; hay que decidir el diseño
+# correcto (rutas + tipo de id) entre ambos microservicios.

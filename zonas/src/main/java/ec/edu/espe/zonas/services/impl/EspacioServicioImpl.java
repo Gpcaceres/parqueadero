@@ -50,7 +50,7 @@ public class EspacioServicioImpl implements EspacioService {
         zonaRepository.findById(idZona)
                 .orElseThrow(() -> new RuntimeException("Zona no encontrada con ID: " + idZona));
         
-        return repositorioEspacio.findByZonaId(idZona).stream()
+        return repositorioEspacio.findByZonaIdZona(idZona).stream()
                 .map(mapper::toResponseDto)
                 .collect(Collectors.toList());
     }
@@ -71,7 +71,7 @@ public class EspacioServicioImpl implements EspacioService {
         
         // VALIDACIÓN: Verificar que no se exceda la capacidad de la zona
         if (objZona.getCapacidad() != null && objZona.getCapacidad() > 0) {
-            long espaciosActuales = repositorioEspacio.findByZonaId(objZona.getId()).size();
+            long espaciosActuales = repositorioEspacio.findByZonaIdZona(objZona.getIdZona()).size();
             
             if (espaciosActuales >= objZona.getCapacidad()) {
                 throw new RuntimeException(

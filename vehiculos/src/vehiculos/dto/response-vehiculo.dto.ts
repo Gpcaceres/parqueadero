@@ -2,7 +2,7 @@ import { Clasificacion } from '../entities/vehiculo.entity';
 import { TipoMoto } from '../entities/motocicleta.entity';
 
 export class ResponseVehiculoDto {
-  id!: string;
+  id_vehiculo!: string;
   placa!: string;
   marca!: string;
   modelo!: string;

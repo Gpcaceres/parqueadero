@@ -15,8 +15,8 @@ export enum Clasificacion {
 @Entity()
 @TableInheritance({ column: { type: 'varchar', name: 'tipo' } })
 export abstract class Vehiculo {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryGeneratedColumn('uuid')
+  id_vehiculo!: string;
 
   @Column({ unique: true })
   placa!: string;

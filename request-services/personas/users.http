@@ -1,0 +1,51 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+
+### 1. Listar todos los usuarios
+GET {{baseUrl}}/users
+Accept: application/json
+
+### 2. Crear usuario (solo id_user + password)
+# id_user viene de la variable compartida "personaId" (creada en
+# a-asociar/variables.http). username se genera solo con las iniciales del
+# nombre de esa persona, y el email de la persona pasa a ser {username}@test.com
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+
+{
+  "id_user": "{{personaId}}",
+  "password": "{{clientePassword}}"
+}
+
+### 3. Obtener usuario por ID (usa la variable compartida userId)
+GET {{baseUrl}}/users/{{userId}}
+Accept: application/json
+
+### 4. Desactivar usuario
+PATCH {{baseUrl}}/users/{{userId}}
+Content-Type: {{contentType}}
+
+{
+  "active": false
+}
+
+### 5. Activar usuario
+PATCH {{baseUrl}}/users/{{userId}}
+Content-Type: {{contentType}}
+
+{
+  "active": true
+}
+
+### 6. Actualizar username y/o password
+PUT {{baseUrl}}/users/{{userId}}
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "NuevaClave456*"
+}
+
+### 7. Eliminar usuario
+DELETE {{baseUrl}}/users/{{userId}}
+Accept: application/json

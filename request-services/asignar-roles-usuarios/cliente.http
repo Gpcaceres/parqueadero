@@ -1,0 +1,73 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+
+# Asignar/quitar roles ahora exige un token con rol admin o root (ver
+# user-role.controller.ts). "cliente" no es un rol restringido, así que el
+# token de admin alcanza.
+
+### 0. Login como admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 1. Asignar rol cliente al usuario compartido (userId + roleIdCliente)
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdCliente}}"
+}
+
+### 2. Ver roles asignados al usuario (un usuario puede tener varios)
+GET {{baseUrl}}/user-role/{{userId}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json
+
+### 3. Login para confirmar el rol "cliente" en el JWT
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### 4. Desactivar el rol cliente (sin eliminar la asignación)
+PATCH {{baseUrl}}/user-role/{{userId}}/{{roleIdCliente}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "active": false
+}
+
+### 5. Login otra vez: "cliente" ya NO debe aparecer en roles
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### 6. Reactivar el rol cliente
+PATCH {{baseUrl}}/user-role/{{userId}}/{{roleIdCliente}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "active": true
+}
+
+### 7. Quitar por completo la asignación del rol cliente (cleanup)
+DELETE {{baseUrl}}/user-role/{{userId}}/{{roleIdCliente}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json

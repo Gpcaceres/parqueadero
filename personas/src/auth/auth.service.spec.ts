@@ -55,7 +55,7 @@ describe('AuthService', () => {
   describe('validateUser', () => {
     it('should validate user with correct password', async () => {
       const user = {
-        id_person: '123',
+        id_user: '123',
         username: 'galopez11',
         password_hash: 'hashed-password',
         active: true,
@@ -72,7 +72,7 @@ describe('AuthService', () => {
 
     it('should throw error with incorrect password', async () => {
       const user = {
-        id_person: '123',
+        id_user: '123',
         username: 'galopez11',
         password_hash: 'hashed-password',
         active: true,
@@ -91,7 +91,7 @@ describe('AuthService', () => {
     it('should return access token and user info', async () => {
       const loginDto = { username: 'galopez11', password: 'password123' };
       const user = {
-        id_person: '123',
+        id_user: '123',
         username: 'galopez11',
         password_hash: 'hashed',
         active: true,
@@ -131,8 +131,8 @@ describe('AuthService', () => {
       mockPersonaRepository.create.mockReturnValue(persona);
       mockPersonaRepository.save.mockResolvedValue(persona);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-      mockUserRepository.create.mockReturnValue({ ...registerDto, id_person: '123' });
-      mockUserRepository.save.mockResolvedValue({ ...registerDto, id_person: '123' });
+      mockUserRepository.create.mockReturnValue({ ...registerDto, id_user: '123' });
+      mockUserRepository.save.mockResolvedValue({ ...registerDto, id_user: '123' });
 
       const result = await service.register(registerDto);
 

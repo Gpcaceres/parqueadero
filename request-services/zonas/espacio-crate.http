@@ -1,0 +1,14 @@
+@baseUrl = http://localhost:8080/api/v1
+@contentType = application/json
+
+### 1. Crear espacio (usa la variable compartida zonaId)
+# tipo debe ser uno de: MOTO, CARRO, AUTOBUS
+POST {{baseUrl}}/espacios
+Content-Type: {{contentType}}
+
+{
+  "idZona": "{{zonaId}}",
+  "descripcion": "Espacio para carro estándar",
+  "tipo": "CARRO",
+  "estado": "DISPONIBLE"
+}

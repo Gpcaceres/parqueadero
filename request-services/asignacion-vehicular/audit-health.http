@@ -1,0 +1,36 @@
+@baseUrl = http://localhost:3002
+@contentType = application/json
+
+# NOTA: la ruta real del servicio es /api/api/asignaciones (ver assignment-crud.http)
+
+### 1. Obtener historial de asignación (usa la variable compartida userId)
+GET {{baseUrl}}/api/api/asignaciones/trazabilidad/{{userId}}/660e8400-e29b-41d4-a716-446655440001
+Accept: application/json
+
+### 2. Obtener auditoría por usuario
+GET {{baseUrl}}/api/api/asignaciones/auditoría/usuario/{{userId}}
+Accept: application/json
+
+### 3. Obtener auditoría por vehículo
+GET {{baseUrl}}/api/api/asignaciones/auditoría/vehículo/660e8400-e29b-41d4-a716-446655440001
+Accept: application/json
+
+### 4. Consulta avanzada de auditoría
+GET {{baseUrl}}/api/api/asignaciones/auditoría/buscar?userId={{userId}}&actionType=CREACIÓN&limit=10
+Accept: application/json
+
+### 5. Obtener eventos recientes de auditoría
+GET {{baseUrl}}/api/api/asignaciones/auditoría/eventos-recientes?limit=5
+Accept: application/json
+
+### 6. Obtener resumen de actividad
+GET {{baseUrl}}/api/api/asignaciones/auditoría/resumen
+Accept: application/json
+
+### 7. Obtener usuarios más activos
+GET {{baseUrl}}/api/api/asignaciones/auditoría/usuarios-activos?limit=5
+Accept: application/json
+
+### 8. Health check del servicio de asignaciones
+GET {{baseUrl}}/api/api/asignaciones/health
+Accept: application/json

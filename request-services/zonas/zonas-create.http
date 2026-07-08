@@ -1,0 +1,14 @@
+@baseUrl = http://localhost:8080/api/v1
+@contentType = application/json
+
+### 1. Crear zona
+# tipoZona debe ser uno de: VIP, REGULAR, INTERNA, EXTERNA, PREFERENCIAL
+POST {{baseUrl}}/zonas
+Content-Type: {{contentType}}
+
+{
+  "nombre": "Zona Prueba",
+  "descripcion": "Zona creada para pruebas HTTP",
+  "tipoZona": "REGULAR",
+  "capacidad": 10
+}

@@ -1,0 +1,67 @@
+@baseUrlPersonas = http://localhost:3001
+@baseUrlVehiculos = http://localhost:3000
+@baseUrlZonas = http://localhost:8080/api/v1
+@baseUrlTickets = http://localhost:3003
+@baseUrlAsignacion = http://localhost:3002
+@contentType = application/json
+
+# Caso: usuario base (sin rol especial) registra el ingreso de SU vehículo.
+# El servicio de tickets no tiene ningún guard de autenticación, así que esto
+# funciona igual con o sin JWT; lo relevante aquí son los PRE-REQUISITOS de
+# negocio antes de crear el ticket:
+#   1) el vehículo debe existir en el servicio de vehículos,
+#   2) el vehículo debería estar ASIGNADO a este usuario (asignacion-trazabilidad),
+#   3) el espacio debe existir, pertenecer a una zona y estar DISPONIBLE.
+
+### 1. Verificar que el vehículo compartido existe
+GET {{baseUrlVehiculos}}/vehiculos/{{vehiculoId}}
+Accept: application/json
+
+### 2. Verificar que el espacio compartido existe, pertenece a una zona y está disponible
+GET {{baseUrlZonas}}/espacios/zona/{{zonaId}}
+Accept: application/json
+
+### 3. Asignar el vehículo al usuario (asignacion-trazabilidad)
+# NOTA: hoy esto siempre falla (400 "Usuario ... no existe en el microservicio
+# de personas"): asignacion-trazabilidad llama a "/api/personas/:id" para
+# validar al usuario, pero el servicio de personas real expone "/personas/:id"
+# (sin /api) -> la validación nunca encuentra al usuario. Y aunque eso se
+# corrigiera, "vehicleId" debe ser UUID mientras que vehiculos usa ids
+# numéricos (vehiculoId=1), y vehicle-integration.service.ts también llama a
+# "/api/vehiculos/:id" en vez de "/vehiculos/:id". Son 3 bugs de integración
+# entre microservicios (ver request-services/asignacion-vehicular/), no algo
+# que se resuelva en las pruebas de tickets. Se deja el paso documentado como
+# parte del flujo real de negocio.
+POST {{baseUrlAsignacion}}/api/api/asignaciones
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "vehicleId": "660e8400-e29b-41d4-a716-446655440001",
+  "notes": "Vehículo asignado antes de generar el ticket"
+}
+
+### 4. Crear ticket de ingreso para el usuario y su vehículo
+# @name crearTicket
+POST {{baseUrlTickets}}/tickets
+Content-Type: {{contentType}}
+
+{
+  "id_usuario": "{{userId}}",
+  "id_espacio": "{{espacioId}}",
+  "id_vehiculo": "{{vehiculoPlaca}}",
+  "tipo_vehiculo": "Auto",
+  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+}
+
+### 5. Ver mis tickets (como usuario dueño del vehículo)
+GET {{baseUrlTickets}}/tickets/usuario/{{userId}}
+Accept: application/json
+
+### 6. Ver el ticket activo de ese espacio
+GET {{baseUrlTickets}}/tickets/espacio/{{espacioId}}
+Accept: application/json
+
+### 7. Cleanup: eliminar el ticket creado en el paso 4
+DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Accept: application/json

@@ -1,0 +1,14 @@
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### 1. Listar todos los vehículos
+GET {{baseUrl}}/vehiculos
+Accept: application/json
+
+### 2. Obtener vehículo por ID (usa la variable compartida vehiculoId)
+GET {{baseUrl}}/vehiculos/{{vehiculoId}}
+Accept: application/json
+
+### 3. Verificar vehículo creado
+GET {{baseUrl}}/vehiculos/{{vehiculoId}}
+Accept: application/json

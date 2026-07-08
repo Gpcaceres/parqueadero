@@ -9,7 +9,7 @@ import {
 @Entity('persons')
 export class Persona {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id_persona!: string;
 
   @Column({ default: true })
   active!: boolean;

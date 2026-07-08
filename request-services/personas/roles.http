@@ -1,0 +1,77 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+
+### 0. Login como admin (necesario: /roles exige JWT + rol admin/root)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 1. Listar todos los roles (requiere rol admin o root)
+GET {{baseUrl}}/roles
+Authorization: Bearer {{login.response.body.$.access_token}}
+Accept: application/json
+
+### 2. Crear rol ADMINISTRADOR
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+
+{
+  "tipo": "ADMINISTRADOR"
+}
+
+### 3. Crear rol CLIENTE
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+
+{
+  "tipo": "CLIENTE"
+}
+
+### 4. Crear rol ROOT
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+
+{
+  "tipo": "ROOT"
+}
+
+### 5. Crear rol RECAUDADOR
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+
+{
+  "tipo": "RECAUDADOR"
+}
+
+### 6. Obtener rol por ID (usa la variable compartida roleIdAdmin)
+GET {{baseUrl}}/roles/{{roleIdAdmin}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+Accept: application/json
+
+### 7. Eliminar rol por ID
+DELETE {{baseUrl}}/roles/27bfc63e-c1db-4b7e-b795-94e491081b87
+Accept: application/json
+
+### 8. Listar todos los permisos (requiere estar autenticado, cualquier rol)
+GET {{baseUrl}}/roles/permissions
+Authorization: Bearer {{login.response.body.$.access_token}}
+Accept: application/json
+
+### 9. Obtener permisos de un rol (requiere rol admin o root)
+GET {{baseUrl}}/roles/{{roleIdAdmin}}/permissions
+Authorization: Bearer {{login.response.body.$.access_token}}
+Accept: application/json
+
+### 10. Asignar permisos a un rol (requiere rol root)
+POST {{baseUrl}}/roles/{{roleIdAdmin}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "permissionIds": []
+}

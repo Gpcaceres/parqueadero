@@ -1,0 +1,56 @@
+﻿@baseUrl = http://localhost:3001
+@contentType = application/json
+
+### 1. Login no autorizado (credenciales inválidas)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "ClaveIncorrecta"
+}
+
+### 2. Login usuario base (sin rol asignado; ver variables compartidas clienteUserName/clientePassword)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### 3. Login admin (usa las variables compartidas adminUserName/adminPassword)
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 4. Login recaudador
+# Este usuario debe existir con el rol 'recaudador'
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "recaudador01",
+  "password": "Recaudador123!"
+}
+
+### 5. Login root (usa las variables compartidas rootUserName/rootPassword)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{rootUserName}}",
+  "password": "{{rootPassword}}"
+}
+
+### 6. Verificar token JWT
+# Ejecuta primero "3. Login admin" en esta sesión; reutiliza ese token
+GET {{baseUrl}}/auth/verify
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json
+

@@ -14,7 +14,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EspacioResponseDto {
-    private UUID id;
+    private UUID idEspacio;
     private String codigo;
     private String descripcion;
     private TipoEspacio tipo;

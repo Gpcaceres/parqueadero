@@ -1,0 +1,88 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+
+# Asignar/quitar el rol admin ahora exige un token con rol ROOT (POST/PATCH/
+# DELETE /user-role: admin puede gestionar cualquier rol EXCEPTO admin/root).
+
+### 0. Login como root (necesario para gestionar el rol admin)
+# @name loginRoot
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{rootUserName}}",
+  "password": "{{rootPassword}}"
+}
+
+### 1. Asignar rol admin a la cuenta admin (userAdminId + roleIdAdmin)
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "id_user": "{{userAdminId}}",
+  "id_role": "{{roleIdAdmin}}"
+}
+
+### 2. Ver roles asignados a la cuenta admin (un usuario puede tener varios)
+GET {{baseUrl}}/user-role/{{userAdminId}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json
+
+### 3. Login para confirmar el rol "admin" en el JWT
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 4. Probar acceso a endpoint protegido (requiere rol admin o root)
+GET {{baseUrl}}/roles
+Authorization: Bearer {{login.response.body.$.access_token}}
+Accept: application/json
+
+### 5. Desactivar el rol admin (sin eliminar la asignación)
+PATCH {{baseUrl}}/user-role/{{userAdminId}}/{{roleIdAdmin}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "active": false
+}
+
+### 6. Login otra vez: "admin" ya NO debe aparecer en roles
+# @name loginSinAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 7. Probar el mismo endpoint protegido: ahora debe dar 403 (sin el rol activo)
+GET {{baseUrl}}/roles
+Authorization: Bearer {{loginSinAdmin.response.body.$.access_token}}
+Accept: application/json
+
+### 8. Reactivar el rol admin
+# IMPORTANTE: ejecuta este paso antes de cerrar la sesión de pruebas, ya que
+# roles.http, request-loggin-users.http y los demás archivos de esta carpeta
+# asumen que {{adminUserName}} SIEMPRE tiene el rol admin activo.
+PATCH {{baseUrl}}/user-role/{{userAdminId}}/{{roleIdAdmin}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "active": true
+}
+
+### 9. Quitar por completo la asignación del rol admin
+# CUIDADO: esto deja a {{adminUserName}} sin rol admin, rompiendo el resto de
+# pruebas que dependen de esa cuenta hasta que corras de nuevo el paso 1.
+DELETE {{baseUrl}}/user-role/{{userAdminId}}/{{roleIdAdmin}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json

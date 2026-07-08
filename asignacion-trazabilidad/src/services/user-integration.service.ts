@@ -29,7 +29,7 @@ export class UserIntegrationService {
       this.logger.debug(`Obteniendo detalles del usuario ${userId}`);
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.userServiceUrl}/api/personas/${userId}`),
+        this.httpService.get(`${this.userServiceUrl}/personas/${userId}`),
       );
 
       return response.data;
@@ -52,7 +52,7 @@ export class UserIntegrationService {
       this.logger.debug(`Obteniendo detalles de ${userIds.length} usuarios`);
 
       const response = await firstValueFrom(
-        this.httpService.post(`${this.userServiceUrl}/api/personas/batch`, {
+        this.httpService.post(`${this.userServiceUrl}/personas/batch`, {
           ids: userIds,
         }),
       );
@@ -85,7 +85,7 @@ export class UserIntegrationService {
    */
   async isUserActive(userId: string): Promise<boolean> {
     const user = await this.getUserDetails(userId);
-    return user?.activo === true || user?.isActive === true;
+    return user?.active === true;
   }
 
   /**
@@ -99,7 +99,7 @@ export class UserIntegrationService {
       this.logger.debug(`Obteniendo usuarios con rol ${role}`);
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.userServiceUrl}/api/personas/rol/${role}`),
+        this.httpService.get(`${this.userServiceUrl}/personas/rol/${role}`),
       );
 
       return response.data;

@@ -1,0 +1,74 @@
+@baseUrlPersonas = http://localhost:3001
+@baseUrlVehiculos = http://localhost:3000
+@baseUrlZonas = http://localhost:8080/api/v1
+@baseUrlTickets = http://localhost:3003
+@contentType = application/json
+
+# Caso: usuario con rol "cliente" registra el ingreso de su propio vehículo.
+# Permisos del rol cliente (ver roles-permissions.seed.ts): tickets.read,
+# tickets.create (no puede actualizar/anular/eliminar tickets de otros).
+# Asignar el rol exige un token con rol admin o root (ver user-role.controller.ts).
+
+### 0. Login como admin (para asignar/quitar el rol cliente)
+# @name loginAdmin
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 1. Asignar rol cliente al usuario compartido
+POST {{baseUrlPersonas}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdCliente}}"
+}
+
+### 2. Login para confirmar el rol "cliente" en el JWT
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### 3. Verificar que el vehículo compartido existe
+GET {{baseUrlVehiculos}}/vehiculos/{{vehiculoId}}
+Accept: application/json
+
+### 4. Verificar que el espacio compartido existe, pertenece a una zona y está disponible
+GET {{baseUrlZonas}}/espacios/zona/{{zonaId}}
+Accept: application/json
+
+### 5. Crear ticket de ingreso (rol cliente)
+# @name crearTicket
+POST {{baseUrlTickets}}/tickets
+Content-Type: {{contentType}}
+
+{
+  "id_usuario": "{{userId}}",
+  "id_espacio": "{{espacioId}}",
+  "id_vehiculo": "{{vehiculoPlaca}}",
+  "tipo_vehiculo": "Auto",
+  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+}
+
+### 6. Ver mis tickets
+GET {{baseUrlTickets}}/tickets/usuario/{{userId}}
+Accept: application/json
+
+### 7. Cleanup: eliminar el ticket creado en el paso 5
+DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Accept: application/json
+
+### 8. Quitar el rol cliente del usuario (cleanup)
+DELETE {{baseUrlPersonas}}/user-role/{{userId}}/{{roleIdCliente}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json

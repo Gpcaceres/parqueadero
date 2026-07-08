@@ -97,11 +97,32 @@ curl -s -X POST "$KONG_ADMIN/services/zonas-service/routes" \
   }' > /dev/null
 
 # ============================
+# TICKETS
+# ============================
+echo "🎫 Registrando Tickets..."
+
+curl -s -X POST "$KONG_ADMIN/services" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "tickets-service",
+    "url": "http://ms-tickets:3003"
+  }' > /dev/null
+
+# Ruta API
+curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "tickets-api",
+    "paths": ["/tickets"],
+    "strip_path": false
+  }' > /dev/null
+
+# ============================
 # PLUGINS CORS
 # ============================
 echo "🔌 Agregando CORS a todos los servicios..."
 
-for service in asignacion-service vehiculos-service personas-service zonas-service; do
+for service in asignacion-service vehiculos-service personas-service zonas-service tickets-service; do
   curl -s -X POST "$KONG_ADMIN/services/$service/plugins" \
     -H "Content-Type: application/json" \
     -d '{"name": "cors", "config": {"origins": ["*"]}}' > /dev/null 2>&1
@@ -117,12 +138,14 @@ echo "  📝 Asignación: http://localhost:8000/api/asignaciones"
 echo "  🚗 Vehículos:  http://localhost:8000/vehiculos"
 echo "  👥 Personas:   http://localhost:8000/personas"
 echo "  📍 Zonas:      http://localhost:8000/zonas"
+echo "  🎫 Tickets:    http://localhost:8000/tickets"
 echo ""
 echo "📚 SWAGGER DIRECTO EN PUERTOS NATIVOS:"
 echo "  📝 http://localhost:3002/swagger"
 echo "  🚗 http://localhost:3000/swagger"
 echo "  👥 http://localhost:3001/swagger"
 echo "  📍 http://localhost:8080/swagger-ui.html"
+echo "  🎫 http://localhost:3003/swagger"
 echo ""
 echo "⚙️  ADMIN:"
 echo "  Kong Admin: http://localhost:8001"

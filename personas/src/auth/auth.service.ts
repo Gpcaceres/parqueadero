@@ -48,23 +48,24 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.username, loginDto.password);
+    const activeRoleNames = this.getActiveRoleNames(user);
 
     const payload = {
-      sub: user.id_person,
+      sub: user.id_user,
       username: user.username,
       email: user.persona?.email,
-      roles: user.userRoles?.map((ur) => ur.role?.name) || [],
+      roles: activeRoleNames,
     };
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        id: user.id_person,
+        id_user: user.id_user,
         username: user.username,
         email: user.persona?.email,
         firstName: user.persona?.first_name,
         lastName: user.persona?.last_name,
-        roles: user.userRoles?.map((ur) => ur.role?.name) || [],
+        roles: activeRoleNames,
       },
     };
   }
@@ -78,7 +79,7 @@ export class AuthService {
 
     // 1. Crear Persona
     const persona = this.personasRepository.create({
-      id: uuidv4(),
+      id_persona: uuidv4(),
       first_name: registerDto.firstName,
       last_name: registerDto.lastName,
       email,
@@ -91,7 +92,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(registerDto.password, 10);
 
     const user = this.usersRepository.create({
-      id_person: persona.id,
+      id_user: persona.id_persona,
       username,
       password_hash: passwordHash,
       persona,
@@ -114,7 +115,7 @@ export class AuthService {
     }
 
     const payload = {
-      sub: user.id_person,
+      sub: user.id_user,
       username: user.username,
       email: user.persona?.email,
       roles: ['cliente'],
@@ -123,7 +124,7 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        id: user.id_person,
+        id_user: user.id_user,
         username: user.username,
         email: user.persona?.email,
         firstName: user.persona?.first_name,
@@ -175,7 +176,7 @@ export class AuthService {
 
   async refreshToken(user: any) {
     const payload = {
-      sub: user.id_person,
+      sub: user.id_user,
       username: user.username,
       email: user.email,
       roles: user.roles || [],
@@ -192,6 +193,13 @@ export class AuthService {
     } catch (error) {
       throw new UnauthorizedException('Token invÃ¡lido o expirado');
     }
+  }
+
+  private getActiveRoleNames(user: User): string[] {
+    return (user.userRoles || [])
+      .filter((ur) => ur.active)
+      .map((ur) => ur.role?.name)
+      .filter((name): name is string => !!name);
   }
 }
 

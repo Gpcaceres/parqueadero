@@ -8,6 +8,8 @@ export enum TipoRol {
   ADMINISTRADOR = 'ADMINISTRADOR',
   CLIENTE = 'CLIENTE',
   OPERADOR = 'OPERADOR',
+  ROOT = 'ROOT',
+  RECAUDADOR = 'RECAUDADOR',
 }
 
 const configuracionRoles: Record<
@@ -26,6 +28,14 @@ const configuracionRoles: Record<
     name: 'OPERADOR',
     description: 'Gestiona el ingreso y salida de vehículos',
   },
+  [TipoRol.ROOT]: {
+    name: 'ROOT',
+    description: 'Super administrador con todos los permisos',
+  },
+  [TipoRol.RECAUDADOR]: {
+    name: 'RECAUDADOR',
+    description: 'Recaudador de pagos',
+  },
 };
 
 export class FactoryPersonas {
@@ -36,9 +46,9 @@ export class FactoryPersonas {
     return persona;
   }
 
-  static crearUsuario(idPerson: string, username: string, passwordHash: string): User {
+  static crearUsuario(idUser: string, username: string, passwordHash: string): User {
     const user = new User();
-    user.id_person = idPerson;
+    user.id_user = idUser;
     user.username = username;
     user.password_hash = passwordHash;
     user.active = true;

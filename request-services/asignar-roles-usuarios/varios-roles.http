@@ -1,0 +1,210 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+
+# ============================================================
+# IMPORTANTE - orden de ejecución (si no lo sigues, da 401 Unauthorized)
+# ============================================================
+# Este archivo encadena tokens con {{nombreRequest.response.body.$...}}.
+# REST Client SOLO resuelve esa referencia si ya enviaste esa petición
+# (botón "Send Request") en la sesión actual de VS Code. Si saltas
+# directo a "1. Asignar rol cliente" sin antes correr "0a. Login como
+# admin", el header Authorization queda vacío -> 401 Unauthorized.
+#
+# Corre las peticiones EN ORDEN, de arriba hacia abajo:
+#   0a. Login como admin   (una sola vez, al inicio)
+#   0b. Login como root    (una sola vez, al inicio)
+#   1, 2, 3 ... 18         (en ese orden)
+#
+# Nota adicional: asignar un rol es ADITIVO — NUNCA borra los roles que
+# el usuario ya tenía, solo agrega el nuevo (verificado con curl: se le
+# asignó "recaudador" a un usuario que ya tenía "admin" y terminó con
+# ["admin","recaudador"], no solo con uno de los dos).
+# ============================================================
+#
+# Caso: un mismo usuario acumula roles progresivamente, de 1 hasta los 4
+# (cliente, recaudador, admin, root). Regla de permisos (user-role.service.ts,
+# assertCanManageRole): admin puede asignar cualquier rol EXCEPTO admin/root;
+# SOLO root puede asignar admin o root. Por eso, para llegar a tener los
+# 4 roles a la vez, los dos últimos (admin y root) solo los puede asignar
+# la cuenta root — un admin nunca puede dejar a alguien con los 4.
+
+### 0a. Login como admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 0b. Login como root
+# @name loginRoot
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{rootUserName}}",
+  "password": "{{rootPassword}}"
+}
+
+### ============================================================
+### PASO 1/4: asignar rol cliente (admin alcanza, no es un rol restringido)
+### ============================================================
+
+### 1. Asignar rol cliente al usuario compartido
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdCliente}}"
+}
+
+### 2. Ver roles del usuario (debe tener 1: cliente)
+GET {{baseUrl}}/user-role/{{userId}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json
+
+### 3. Login: el JWT debe traer roles: ["cliente"]
+# @name loginConUnRol
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### ============================================================
+### PASO 2/4: agregar rol recaudador (admin alcanza)
+### ============================================================
+
+### 4. Asignar rol recaudador al mismo usuario (ya tiene cliente)
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdRecaudador}}"
+}
+
+### 5. Ver roles del usuario (debe tener 2: cliente, recaudador)
+GET {{baseUrl}}/user-role/{{userId}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json
+
+### 6. Login: el JWT debe traer roles: ["cliente","recaudador"]
+# @name loginConDosRoles
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### ============================================================
+### PASO 3/4: agregar rol admin (SOLO root puede asignarlo)
+### ============================================================
+
+### 7. Un admin intentando asignar el rol admin -> debe dar 403
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdAdmin}}"
+}
+
+### 8. Con token root sí se puede asignar el rol admin
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdAdmin}}"
+}
+
+### 9. Ver roles del usuario (debe tener 3: cliente, recaudador, admin)
+GET {{baseUrl}}/user-role/{{userId}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json
+
+### 10. Login: el JWT debe traer roles: ["cliente","recaudador","admin"]
+# @name loginConTresRoles
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### ============================================================
+### PASO 4/4: agregar rol root (SOLO root puede asignarlo)
+### ============================================================
+
+### 11. Un admin intentando asignar el rol root -> debe dar 403
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdRoot}}"
+}
+
+### 12. Con token root sí se puede asignar el rol root
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+
+{
+  "id_user": "{{userId}}",
+  "id_role": "{{roleIdRoot}}"
+}
+
+### 13. Ver roles del usuario (debe tener los 4: cliente, recaudador, admin, root)
+GET {{baseUrl}}/user-role/{{userId}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json
+
+### 14. Login: el JWT debe traer los 4 roles
+# @name loginConCuatroRoles
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+### ============================================================
+### CLEANUP: quitar los 4 roles (admin y root exigen token root;
+### se usa root para las 4 por simplicidad)
+### ============================================================
+
+### 15. Quitar rol cliente
+DELETE {{baseUrl}}/user-role/{{userId}}/{{roleIdCliente}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json
+
+### 16. Quitar rol recaudador
+DELETE {{baseUrl}}/user-role/{{userId}}/{{roleIdRecaudador}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json
+
+### 17. Quitar rol admin
+DELETE {{baseUrl}}/user-role/{{userId}}/{{roleIdAdmin}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json
+
+### 18. Quitar rol root
+DELETE {{baseUrl}}/user-role/{{userId}}/{{roleIdRoot}}
+Authorization: Bearer {{loginRoot.response.body.$.access_token}}
+Accept: application/json

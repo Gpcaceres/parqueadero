@@ -27,7 +27,7 @@ export class VehiculosController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.vehiculosService.findOne(+id);
+    return this.vehiculosService.findOne(id);
   }
 
   @Patch(':id')
@@ -35,11 +35,11 @@ export class VehiculosController {
     @Param('id') id: string,
     @Body() updateVehiculoDto: UpdateVehiculoDto,
   ) {
-    return this.vehiculosService.update(+id, updateVehiculoDto);
+    return this.vehiculosService.update(id, updateVehiculoDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.vehiculosService.remove(+id);
+    return this.vehiculosService.remove(id);
   }
 }

@@ -12,12 +12,12 @@ public class UtilsMappers {
     public EspacioResponseDto toResponseDto(Espacio objEspacio) {
         if (objEspacio == null) return null;
         return EspacioResponseDto.builder()
-                .id(objEspacio.getId())
+                .idEspacio(objEspacio.getIdEspacio())
                 .codigo(objEspacio.getCodigo())
                 .descripcion(objEspacio.getDescripcion())
                 .tipo(objEspacio.getTipo())
                 .estadoEspacio(objEspacio.getEstadoEspacio())
-                .idZona(objEspacio.getZona().getId())
+                .idZona(objEspacio.getZona().getIdZona())
                 .estadoZona(objEspacio.getZona().getEstado())
                 .build();
     }

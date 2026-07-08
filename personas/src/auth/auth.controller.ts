@@ -48,7 +48,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Obtener información del usuario autenticado' })
   async getProfile(@Request() req) {
     return {
-      id: req.user.id,
+      id_user: req.user.id_user,
       username: req.user.username,
       email: req.user.email,
       roles: req.user.roles,

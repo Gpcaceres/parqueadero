@@ -14,10 +14,10 @@ import { UserRole } from './user-role.entity';
 @Entity('users')
 export class User {
   @PrimaryColumn('uuid')
-  id_person!: string;
+  id_user!: string;
 
   @OneToOne(() => Persona, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'id_person' })
+  @JoinColumn({ name: 'id_user' })
   persona!: Persona;
 
   @Column({ default: true })

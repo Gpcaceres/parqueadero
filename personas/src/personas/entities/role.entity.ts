@@ -14,7 +14,7 @@ import { Permission } from './permission.entity';
 @Entity('roles')
 export class Role {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id_role!: string;
 
   @Column({ unique: true, length: 50 })
   name!: string; // cliente, admin, recaudador, root
@@ -37,8 +37,8 @@ export class Role {
   @ManyToMany(() => Permission, (permission) => permission.roles)
   @JoinTable({
     name: 'role_permissions',
-    joinColumn: { name: 'role_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'permission_id', referencedColumnName: 'id' },
+    joinColumn: { name: 'id_role', referencedColumnName: 'id_role' },
+    inverseJoinColumn: { name: 'id_permission', referencedColumnName: 'id_permission' },
   })
   permissions!: Permission[];
 }

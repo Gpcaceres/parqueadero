@@ -1,0 +1,22 @@
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### 1. Actualizar vehículo (usa la variable compartida vehiculoId)
+PATCH {{baseUrl}}/vehiculos/{{vehiculoId}}
+Content-Type: {{contentType}}
+
+{
+  "tipo": "Auto",
+  "datos": {
+    "color": "Negro",
+    "clasificacion": "GASOLINA"
+  }
+}
+
+### 2. Eliminar vehículo
+DELETE {{baseUrl}}/vehiculos/{{vehiculoId}}
+Accept: application/json
+
+### 3. Verificar eliminación
+GET {{baseUrl}}/vehiculos
+Accept: application/json

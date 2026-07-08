@@ -1,0 +1,78 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+
+# Asignar/quitar roles ahora exige un token con rol admin o root (ver
+# user-role.controller.ts). "recaudador" no es un rol restringido, así que el
+# token de admin alcanza. Se usa la cuenta fija userRecaudadorId/recaudadorUserName
+# (ver a-asociar/variables.http), igual que admin/root.
+
+### 0. Login como admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 1. Asignar rol recaudador a la cuenta recaudador (userRecaudadorId + roleIdRecaudador)
+POST {{baseUrl}}/user-role
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_user": "{{userRecaudadorId}}",
+  "id_role": "{{roleIdRecaudador}}"
+}
+
+### 2. Ver roles asignados a la cuenta recaudador (un usuario puede tener varios)
+GET {{baseUrl}}/user-role/{{userRecaudadorId}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json
+
+### 3. Login para confirmar el rol "recaudador" en el JWT
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{recaudadorUserName}}",
+  "password": "{{recaudadorPassword}}"
+}
+
+### 4. Desactivar el rol recaudador (sin eliminar la asignación)
+PATCH {{baseUrl}}/user-role/{{userRecaudadorId}}/{{roleIdRecaudador}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "active": false
+}
+
+### 5. Login otra vez: "recaudador" ya NO debe aparecer en roles
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{recaudadorUserName}}",
+  "password": "{{recaudadorPassword}}"
+}
+
+### 6. Reactivar el rol recaudador
+# IMPORTANTE: ejecuta este paso antes de cerrar la sesión de pruebas, ya que
+# asignar-tickets/recaudador.http asume que {{recaudadorUserName}} SIEMPRE
+# tiene el rol recaudador activo.
+PATCH {{baseUrl}}/user-role/{{userRecaudadorId}}/{{roleIdRecaudador}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "active": true
+}
+
+### 7. Quitar por completo la asignación del rol recaudador
+# CUIDADO: esto deja a {{recaudadorUserName}} sin rol recaudador.
+DELETE {{baseUrl}}/user-role/{{userRecaudadorId}}/{{roleIdRecaudador}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+Accept: application/json

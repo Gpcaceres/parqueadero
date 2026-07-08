@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:8080/api/v1
+@contentType = application/json
+
+### 1. Actualizar espacio (usa la variable compartida espacioId/zonaId)
+# tipo debe ser uno de: MOTO, CARRO, AUTOBUS
+PUT {{baseUrl}}/espacios/{{espacioId}}
+Content-Type: {{contentType}}
+
+{
+  "idZona": "{{zonaId}}",
+  "descripcion": "Espacio actualizado para prueba",
+  "tipo": "MOTO",
+  "estado": "DISPONIBLE"
+}
+
+### 2. Activar / desactivar espacio
+PATCH {{baseUrl}}/espacios/{{espacioId}}/activar-desactivar
+Accept: application/json

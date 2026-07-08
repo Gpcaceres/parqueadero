@@ -7,6 +7,7 @@
 # - Vehículos (3000)
 # - Zonas (8080)
 # - Personas (3001)
+# - Tickets (3003)
 # ============================================
 
 services:
@@ -272,6 +273,42 @@ services:
       timeout: 3s
       retries: 3
       start_period: 15s
+
+  # ============================================
+  # TICKETS (NestJS)
+  # ============================================
+  ms-tickets:
+    build:
+      context: ./ms-tickets
+      dockerfile: Dockerfile
+    container_name: ms-tickets-app
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: docker
+      PORT: 3003
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USUARIO: postgres
+      DB_CONTRASENA: postgres
+      DB_NOMBRE: tickets_db
+      VEHICLE_SERVICE_URL: http://vehiculos:3000
+      USER_SERVICE_URL: http://personas:3001
+      ZONE_SERVICE_URL: http://zonas:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kong:
+        condition: service_healthy
+    networks:
+      - parqueadero-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
 # ============================================
 # VOLÚMENES

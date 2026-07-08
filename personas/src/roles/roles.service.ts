@@ -22,7 +22,7 @@ export class RolesService {
 
   async findOne(id: string) {
     const role = await this.rolesRepository.findOne({
-      where: { id },
+      where: { id_role: id },
       relations: { permissions: true, userRoles: true },
     });
 
@@ -54,7 +54,7 @@ export class RolesService {
   async assignPermissionsToRole(roleId: string, permissionIds: string[]) {
     const role = await this.findOne(roleId);
     const permissions = await this.permissionsRepository.find({
-      where: permissionIds.map((id) => ({ id })),
+      where: permissionIds.map((id) => ({ id_permission: id })),
     });
 
     role.permissions = permissions;
