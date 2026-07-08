@@ -2,7 +2,6 @@ import { Persona } from '../entities/persona.entity';
 import { User } from '../entities/user.entity';
 import { Role } from '../entities/role.entity';
 import { CreatePersonaDto } from '../dto/create-persona.dto';
-import { CreateUserDto } from '../dto/create-user.dto';
 import { CreateRoleDto } from '../dto/create-role.dto';
 
 export enum TipoRol {
@@ -37,10 +36,10 @@ export class FactoryPersonas {
     return persona;
   }
 
-  static crearUsuario(dto: CreateUserDto, passwordHash: string): User {
+  static crearUsuario(idPerson: string, username: string, passwordHash: string): User {
     const user = new User();
-    user.id_person = dto.id_person;
-    user.username = dto.username;
+    user.id_person = idPerson;
+    user.username = username;
     user.password_hash = passwordHash;
     user.active = true;
     return user;

@@ -14,30 +14,30 @@ import { UserRole } from './user-role.entity';
 @Entity('users')
 export class User {
   @PrimaryColumn('uuid')
-  id_person: string;
+  id_person!: string;
 
-  @OneToOne(() => Persona)
+  @OneToOne(() => Persona, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_person' })
-  persona: Persona;
+  persona!: Persona;
 
   @Column({ default: true })
-  active: boolean;
+  active!: boolean;
 
   @CreateDateColumn()
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updated_at!: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  last_login: Date;
+  last_login!: Date;
 
   @Column({ length: 255 })
-  password_hash: string;
+  password_hash!: string;
 
   @Column({ unique: true, length: 15 })
-  username: string;
+  username!: string;
 
   @OneToMany(() => UserRole, (userRole) => userRole.user)
-  userRoles: UserRole[];
+  userRoles!: UserRole[];
 }

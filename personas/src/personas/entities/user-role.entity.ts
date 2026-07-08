@@ -13,25 +13,25 @@ import { Role } from './role.entity';
 @Entity('user_role')
 export class UserRole {
   @PrimaryColumn('uuid')
-  id_user: string;
+  id_user!: string;
 
   @PrimaryColumn('uuid')
-  id_role: string;
+  id_role!: string;
 
-  @ManyToOne(() => User, (user) => user.userRoles)
+  @ManyToOne(() => User, (user) => user.userRoles, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_user' })
-  user: User;
+  user!: User;
 
-  @ManyToOne(() => Role, (role) => role.userRoles)
+  @ManyToOne(() => Role, (role) => role.userRoles, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_role' })
-  role: Role;
+  role!: Role;
 
   @Column({ default: true })
-  active: boolean;
+  active!: boolean;
 
   @CreateDateColumn()
-  assigned_at: Date;
+  assigned_at!: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updated_at!: Date;
 }

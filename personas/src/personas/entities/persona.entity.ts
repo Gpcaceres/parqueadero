@@ -9,38 +9,38 @@ import {
 @Entity('persons')
 export class Persona {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ default: true })
-  active: boolean;
+  active!: boolean;
 
   @Column({ type: 'text', nullable: true })
-  address: string;
+  address!: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updated_at!: Date;
 
   @Column({ unique: true, length: 30 })
-  dni: string;
+  dni!: string;
 
   @Column({ unique: true, length: 50 })
-  email: string;
+  email!: string;
 
   @Column({ length: 30 })
-  first_name: string;
+  first_name!: string;
 
   @Column({ length: 30 })
-  last_name: string;
+  last_name!: string;
 
   @Column({ length: 30, nullable: true })
-  middle_name: string;
+  middle_name!: string;
 
   @Column({ length: 30, nullable: true })
-  nationality: string;
+  nationality!: string;
 
   @Column({ unique: true, length: 15, nullable: true })
-  phone: string;
+  phone!: string;
 }

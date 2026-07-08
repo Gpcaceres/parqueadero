@@ -44,6 +44,7 @@ export class PersonasService {
   }
 
   async remove(id: string): Promise<void> {
+    await this.findOne(id);
     await this.personaRepository.delete(id);
   }
 }
