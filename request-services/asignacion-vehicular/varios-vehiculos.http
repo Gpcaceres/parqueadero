@@ -22,7 +22,7 @@
 ### ============================================================
 
 ### 1. Asignar vehiculoId al cliente compartido (userId)
-POST {{baseUrlAsignacion}}/api/api/asignaciones
+POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
 
 {
@@ -32,7 +32,7 @@ Content-Type: {{contentType}}
 }
 
 ### 2. Ver flota del cliente (debe tener 1 vehículo)
-GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}?enriched=false
+GET {{baseUrlAsignacion}}/api/asignaciones/usuario/{{userId}}?enriched=false
 Accept: application/json
 
 ### ============================================================
@@ -40,7 +40,7 @@ Accept: application/json
 ### ============================================================
 
 ### 3. Asignar vehiculoId2 al mismo cliente
-POST {{baseUrlAsignacion}}/api/api/asignaciones
+POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
 
 {
@@ -50,7 +50,7 @@ Content-Type: {{contentType}}
 }
 
 ### 4. Ver flota del cliente (debe tener 2 vehículos)
-GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}?enriched=false
+GET {{baseUrlAsignacion}}/api/asignaciones/usuario/{{userId}}?enriched=false
 Accept: application/json
 
 ### ============================================================
@@ -58,7 +58,7 @@ Accept: application/json
 ### ============================================================
 
 ### 5. Asignar vehiculoId3 al mismo cliente
-POST {{baseUrlAsignacion}}/api/api/asignaciones
+POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
 
 {
@@ -68,11 +68,11 @@ Content-Type: {{contentType}}
 }
 
 ### 6. Ver flota del cliente (debe tener los 3 vehículos)
-GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}?enriched=false
+GET {{baseUrlAsignacion}}/api/asignaciones/usuario/{{userId}}?enriched=false
 Accept: application/json
 
 ### 7. Ver estadísticas del cliente (debe reportar 3 vehículos activos)
-GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}/estadisticas
+GET {{baseUrlAsignacion}}/api/asignaciones/usuario/{{userId}}/estadisticas
 Accept: application/json
 
 ### ============================================================
@@ -80,7 +80,7 @@ Accept: application/json
 ### ============================================================
 
 ### 8. Reintentar asignar vehiculoId (ya asignado) -> 409 esperado
-POST {{baseUrlAsignacion}}/api/api/asignaciones
+POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
 
 {
@@ -95,17 +95,17 @@ Content-Type: {{contentType}}
 ### ============================================================
 
 ### 9. Revocar vehiculoId
-DELETE {{baseUrlAsignacion}}/api/api/asignaciones/{{userId}}/{{vehiculoId}}
+DELETE {{baseUrlAsignacion}}/api/asignaciones/{{userId}}/{{vehiculoId}}
 Accept: application/json
 
 ### 10. Revocar vehiculoId2
-DELETE {{baseUrlAsignacion}}/api/api/asignaciones/{{userId}}/{{vehiculoId2}}
+DELETE {{baseUrlAsignacion}}/api/asignaciones/{{userId}}/{{vehiculoId2}}
 Accept: application/json
 
 ### 11. Revocar vehiculoId3
-DELETE {{baseUrlAsignacion}}/api/api/asignaciones/{{userId}}/{{vehiculoId3}}
+DELETE {{baseUrlAsignacion}}/api/asignaciones/{{userId}}/{{vehiculoId3}}
 Accept: application/json
 
 ### 12. Ver flota del cliente (debe quedar vacía otra vez)
-GET {{baseUrlAsignacion}}/api/api/asignaciones/usuario/{{userId}}?enriched=false
+GET {{baseUrlAsignacion}}/api/asignaciones/usuario/{{userId}}?enriched=false
 Accept: application/json

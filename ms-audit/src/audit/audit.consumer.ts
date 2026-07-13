@@ -24,8 +24,7 @@ export class AuditConsumer implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
-    await this.connect();
-    await this.consume();
+    await this.connectAndConsume();
   }
 
   async onModuleDestroy() {
@@ -37,20 +36,40 @@ export class AuditConsumer implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  // Conecta y arranca el consumo como una sola operación: si cualquiera de
+  // los dos pasos falla (incluida una conexión que se cae después), se
+  // reintenta el ciclo completo, para no quedar con una conexión viva pero
+  // sin consumidor enganchado a la cola.
+  private async connectAndConsume() {
+    try {
+      await this.connect();
+      await this.consume();
+    } catch (error) {
+      this.logger.error(`Error conectando/consumiendo de RabbitMQ: ${error}`);
+      setTimeout(() => this.connectAndConsume(), 5000);
+    }
+  }
+
   private async connect() {
     const { host, port, username, password } = getRabbitMQConfig(
       this.configService,
     );
     const url = `amqp://${username}:${password}@${host}:${port}`;
 
-    try {
-      this.connection = await amqp.connect(url);
-      this.channel = await this.connection.createChannel();
-      this.logger.log(`Connected to RabbitMQ at ${host}:${port}`);
-    } catch (error) {
-      this.logger.error(`Failed to connect to RabbitMQ at ${error}`);
-      setTimeout(() => this.connect(), 5000); // Retry after 5 seconds
-    }
+    this.connection = await amqp.connect(url);
+    this.channel = await this.connection.createChannel();
+    this.logger.log(`Connected to RabbitMQ at ${host}:${port}`);
+
+    this.connection.on('close', () => {
+      this.logger.warn('Conexión a RabbitMQ cerrada, intentando reconectar...');
+      this.channel = null;
+      this.connection = null;
+      this.connectAndConsume();
+    });
+
+    this.connection.on('error', (err: any) => {
+      this.logger.error(`Error en conexión RabbitMQ: ${err.message}`);
+    });
   }
 
   private async consume() {
@@ -103,6 +122,7 @@ export class AuditConsumer implements OnModuleInit, OnModuleDestroy {
       const errorMessage =
         error instanceof Error ? error.message : 'Error desconocido';
       this.logger.error(`Error configurando consumidor: ${errorMessage}`);
+      throw error;
     }
   }
 }

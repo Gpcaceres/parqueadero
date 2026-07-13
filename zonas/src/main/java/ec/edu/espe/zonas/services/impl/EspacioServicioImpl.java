@@ -11,6 +11,7 @@ import ec.edu.espe.zonas.dtos.EspacioResponseDto;
 import ec.edu.espe.zonas.entidades.Espacio;
 import ec.edu.espe.zonas.entidades.EstadoEspacio;
 import ec.edu.espe.zonas.entidades.Zona;
+import ec.edu.espe.zonas.exceptions.CapacidadExcedidaException;
 import ec.edu.espe.zonas.repositorios.EspacioRepository;
 import ec.edu.espe.zonas.repositorios.ZonaRepository;
 import ec.edu.espe.zonas.services.AuditEventPublisher;
@@ -76,7 +77,7 @@ public class EspacioServicioImpl implements EspacioService {
             long espaciosActuales = repositorioEspacio.findByZonaIdZona(objZona.getIdZona()).size();
             
             if (espaciosActuales >= objZona.getCapacidad()) {
-                throw new RuntimeException(
+                throw new CapacidadExcedidaException(
                     String.format("No se puede crear el espacio. La zona '%s' ha alcanzado su capacidad máxima de %d espacios (actualmente tiene %d espacios).",
                         objZona.getNombre(), objZona.getCapacidad(), espaciosActuales)
                 );

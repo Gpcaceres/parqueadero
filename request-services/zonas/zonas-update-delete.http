@@ -10,7 +10,7 @@ Content-Type: {{contentType}}
   "nombre": "Zona Prueba Actualizada",
   "descripcion": "Zona actualizada desde prueba HTTP",
   "tipoZona": "REGULAR",
-  "capacidad": 15
+  "capacidad": 2
 }
 
 ### 2. Activar / desactivar zona

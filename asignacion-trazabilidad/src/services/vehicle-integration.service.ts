@@ -190,7 +190,7 @@ export class VehicleIntegrationService {
   async checkVehicleServiceHealth(): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.httpService.get(`${this.vehicleServiceUrl}/health`),
+        this.httpService.get(`${this.vehicleServiceUrl}/`),
       );
       return true;
     } catch (error) {

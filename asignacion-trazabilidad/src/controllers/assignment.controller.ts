@@ -43,7 +43,7 @@ function normalizarIp(ip?: string): string | undefined {
  * - RF2: Registro de trazabilidad/auditoría
  * - RF3: Consulta de flota por propietario
  */
-@Controller('api/asignaciones')
+@Controller('asignaciones')
 export class AssignmentController {
   private readonly logger = new Logger(AssignmentController.name);
 
@@ -265,7 +265,7 @@ export class AssignmentController {
    * RF2: GET /api/asignaciones/auditoría/usuario/:userId
    * Obtener auditoría completa de un usuario
    */
-  @Get('auditoría/usuario/:userId')
+  @Get('auditoria/usuario/:userId')
   async getUserAuditTrail(@Param('userId') userId: string) {
     this.logger.log(`Obteniendo auditoría del usuario ${userId}`);
     return this.auditService.getUserAuditTrail(userId);
@@ -275,7 +275,7 @@ export class AssignmentController {
    * RF2: GET /api/asignaciones/auditoría/vehículo/:vehicleId
    * Obtener auditoría completa de un vehículo
    */
-  @Get('auditoría/vehículo/:vehicleId')
+  @Get('auditoria/vehiculo/:vehicleId')
   async getVehicleAuditTrail(@Param('vehicleId') vehicleId: string) {
     this.logger.log(`Obteniendo auditoría del vehículo ${vehicleId}`);
     return this.auditService.getVehicleAuditTrail(vehicleId);
@@ -294,7 +294,7 @@ export class AssignmentController {
    * - page: número de página
    * - limit: registros por página
    */
-  @Get('auditoría/buscar')
+  @Get('auditoria/buscar')
   async queryAuditTrail(@Query() filters: AuditTrailFilterDto) {
     this.logger.log(`Buscando en auditoría con filtros`, filters);
     return this.auditService.queryAuditTrail(filters);
@@ -304,7 +304,7 @@ export class AssignmentController {
    * GET /api/asignaciones/auditoría/eventos-recientes
    * Obtener últimos eventos de auditoría
    */
-  @Get('auditoría/eventos-recientes')
+  @Get('auditoria/eventos-recientes')
   async getRecentEvents(
     @Query('limit') limit: string = '50',
   ) {
@@ -315,7 +315,7 @@ export class AssignmentController {
    * GET /api/asignaciones/auditoría/resumen
    * Obtener resumen de actividad
    */
-  @Get('auditoría/resumen')
+  @Get('auditoria/resumen')
   async getActivitySummary(
     @Query('userId') userId?: string,
   ) {
@@ -326,7 +326,7 @@ export class AssignmentController {
    * GET /api/asignaciones/auditoría/usuarios-activos
    * Obtener usuarios más activos
    */
-  @Get('auditoría/usuarios-activos')
+  @Get('auditoria/usuarios-activos')
   async getTopActiveUsers(
     @Query('limit') limit: string = '10',
   ) {
@@ -337,7 +337,7 @@ export class AssignmentController {
    * GET /api/asignaciones/vehículo/:vehicleId/propietario
    * Obtener propietario actual de un vehículo
    */
-  @Get('vehículo/:vehicleId/propietario')
+  @Get('vehiculo/:vehicleId/propietario')
   async getCurrentOwner(
     @Param('vehicleId') vehicleId: string,
   ) {

@@ -174,7 +174,7 @@ export class UserIntegrationService {
   async checkUserServiceHealth(): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.httpService.get(`${this.userServiceUrl}/health`),
+        this.httpService.get(`${this.userServiceUrl}/`),
       );
       return true;
     } catch (error) {

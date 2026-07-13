@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { UserRole } from './entities/user-role.entity';
 import { Role } from './entities/role.entity';
 import { CreateUserRoleDto } from './dto/create-user-role.dto';
+import { EventPublisher, AuditEvent } from '../event-publisher.service';
 
 const RESTRICTED_ROLE_NAMES = ['admin', 'root'];
 
@@ -14,6 +15,7 @@ export class UserRoleService {
     private readonly userRoleRepository: Repository<UserRole>,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   private async assertCanManageRole(idRole: string, requesterRoles: string[]): Promise<void> {
@@ -31,7 +33,12 @@ export class UserRoleService {
     }
   }
 
-  async assignRole(dto: CreateUserRoleDto, requesterRoles: string[]): Promise<UserRole> {
+  async assignRole(
+    dto: CreateUserRoleDto,
+    requesterRoles: string[],
+    requesterUsername?: string,
+    ip?: string,
+  ): Promise<UserRole> {
     await this.assertCanManageRole(dto.id_role, requesterRoles);
 
     const existe = await this.userRoleRepository.findOneBy({
@@ -43,13 +50,17 @@ export class UserRoleService {
         throw new BadRequestException('El rol ya está asignado y activo para este usuario');
       }
       existe.active = true;
-      return this.userRoleRepository.save(existe);
+      const saved = await this.userRoleRepository.save(existe);
+      await this.emitEvent('CREATE', saved, requesterUsername, ip);
+      return saved;
     }
     const userRole = new UserRole();
     userRole.id_user = dto.id_user;
     userRole.id_role = dto.id_role;
     userRole.active = true;
-    return this.userRoleRepository.save(userRole);
+    const saved = await this.userRoleRepository.save(userRole);
+    await this.emitEvent('CREATE', saved, requesterUsername, ip);
+    return saved;
   }
 
   async findByUser(idUser: string): Promise<UserRole[]> {
@@ -64,6 +75,8 @@ export class UserRoleService {
     idRole: string,
     active: boolean,
     requesterRoles: string[],
+    requesterUsername?: string,
+    ip?: string,
   ): Promise<UserRole> {
     await this.assertCanManageRole(idRole, requesterRoles);
 
@@ -75,10 +88,18 @@ export class UserRoleService {
       throw new NotFoundException('La asignación no existe');
     }
     userRole.active = active;
-    return this.userRoleRepository.save(userRole);
+    const saved = await this.userRoleRepository.save(userRole);
+    await this.emitEvent('UPDATE', saved, requesterUsername, ip);
+    return saved;
   }
 
-  async removeRole(idUser: string, idRole: string, requesterRoles: string[]): Promise<void> {
+  async removeRole(
+    idUser: string,
+    idRole: string,
+    requesterRoles: string[],
+    requesterUsername?: string,
+    ip?: string,
+  ): Promise<void> {
     await this.assertCanManageRole(idRole, requesterRoles);
 
     const existe = await this.userRoleRepository.findOneBy({ id_user: idUser, id_role: idRole });
@@ -86,5 +107,28 @@ export class UserRoleService {
       throw new NotFoundException('La asignación no existe');
     }
     await this.userRoleRepository.delete({ id_user: idUser, id_role: idRole });
+    await this.emitEvent('DELETE', existe, requesterUsername, ip);
+  }
+
+  // Método auxiliar para publicar eventos de auditoría hacia ms-audit
+  private async emitEvent(
+    accion: string,
+    userRole: UserRole,
+    usuario?: string,
+    ip?: string,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-personas',
+      accion,
+      entidad: 'USER-ROLE',
+      datos: {
+        id_user: userRole.id_user,
+        id_role: userRole.id_role,
+        active: userRole.active,
+      },
+      usuario,
+      ip,
+    };
+    await this.eventPublisher.publish(event);
   }
 }

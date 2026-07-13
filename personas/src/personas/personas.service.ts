@@ -5,15 +5,17 @@ import { Persona } from './entities/persona.entity';
 import { CreatePersonaDto } from './dto/create-persona.dto';
 import { UpdatePersonaDto } from './dto/update-persona.dto';
 import { FactoryPersonas } from './factory/factory-personas';
+import { EventPublisher, AuditEvent } from '../event-publisher.service';
 
 @Injectable()
 export class PersonasService {
   constructor(
     @InjectRepository(Persona)
     private readonly personaRepository: Repository<Persona>,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
-  async create(createPersonaDto: CreatePersonaDto): Promise<Persona> {
+  async create(createPersonaDto: CreatePersonaDto, ip?: string): Promise<Persona> {
     const porDni = await this.personaRepository.findOneBy({ dni: createPersonaDto.dni });
     if (porDni) {
       throw new BadRequestException(`Ya existe una persona con DNI ${createPersonaDto.dni}`);
@@ -23,7 +25,9 @@ export class PersonasService {
       throw new BadRequestException(`El correo ${createPersonaDto.email} ya está registrado`);
     }
     const persona = FactoryPersonas.crearPersona(createPersonaDto);
-    return this.personaRepository.save(persona);
+    const saved = await this.personaRepository.save(persona);
+    await this.emitEvent('CREATE', saved, ip);
+    return saved;
   }
 
   async findAll(): Promise<Persona[]> {
@@ -38,13 +42,33 @@ export class PersonasService {
     return persona;
   }
 
-  async update(id: string, updatePersonaDto: UpdatePersonaDto): Promise<Persona> {
+  async update(id: string, updatePersonaDto: UpdatePersonaDto, ip?: string): Promise<Persona> {
     await this.personaRepository.update(id, updatePersonaDto);
-    return this.findOne(id);
+    const saved = await this.findOne(id);
+    await this.emitEvent('UPDATE', saved, ip);
+    return saved;
   }
 
-  async remove(id: string): Promise<void> {
-    await this.findOne(id);
+  async remove(id: string, ip?: string): Promise<void> {
+    const persona = await this.findOne(id);
     await this.personaRepository.delete(id);
+    await this.emitEvent('DELETE', persona, ip);
+  }
+
+  // Método auxiliar para publicar eventos de auditoría hacia ms-audit
+  private async emitEvent(accion: string, persona: Persona, ip?: string) {
+    const event: AuditEvent = {
+      servicio: 'ms-personas',
+      accion,
+      entidad: 'PERSONA',
+      datos: {
+        id_persona: persona.id_persona,
+        dni: persona.dni,
+        email: persona.email,
+        active: persona.active,
+      },
+      ip,
+    };
+    await this.eventPublisher.publish(event);
   }
 }

@@ -10,8 +10,12 @@ import { User } from './personas/entities/user.entity';
 import { Role } from './personas/entities/role.entity';
 import { UserRole } from './personas/entities/user-role.entity';
 import { Permission } from './personas/entities/permission.entity';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
+  controllers: [AppController],
+  providers: [AppService],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
