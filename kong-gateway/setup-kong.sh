@@ -32,7 +32,7 @@ curl -s -X POST "$KONG_ADMIN/services/asignacion-service/routes" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "asignacion-api",
-    "paths": ["/api/api/asignaciones"],
+    "paths": ["/api/asignaciones"],
     "strip_path": false
   }' > /dev/null
 
@@ -75,6 +75,41 @@ curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
   -d '{
     "name": "personas-api",
     "paths": ["/personas"],
+    "strip_path": false
+  }' > /dev/null
+
+# El servicio de personas expone otros 4 controllers en su propio path raíz
+# (no bajo /personas): auth, users, roles y user-role. Sin una ruta por cada
+# uno, Kong nunca los reenvía (solo matchea "/personas").
+curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "personas-auth-api",
+    "paths": ["/auth"],
+    "strip_path": false
+  }' > /dev/null
+
+curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "personas-users-api",
+    "paths": ["/users"],
+    "strip_path": false
+  }' > /dev/null
+
+curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "personas-roles-api",
+    "paths": ["/roles"],
+    "strip_path": false
+  }' > /dev/null
+
+curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "personas-user-role-api",
+    "paths": ["/user-role"],
     "strip_path": false
   }' > /dev/null
 
