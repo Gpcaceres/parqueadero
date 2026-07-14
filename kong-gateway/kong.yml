@@ -84,6 +84,31 @@ services:
           minute: 100
 
   # ============================
+  # TICKETS
+  # ============================
+  - name: tickets-service
+    url: http://ms-tickets:3003
+    tags:
+      - parqueadero
+      - tickets
+    routes:
+      - name: tickets-api
+        paths:
+          - /tickets
+        strip_path: true
+      - name: tickets-sse
+        paths:
+          - /sse
+        strip_path: true
+    plugins:
+      - name: cors
+        config:
+          origins: ["*"]
+      - name: rate-limiting
+        config:
+          minute: 100
+
+  # ============================
   # ZONAS
   # ============================
   - name: zonas-service

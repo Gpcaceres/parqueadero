@@ -27,9 +27,9 @@ Content-Type: {{contentType}}
 {
   "tipo": "Moto",
   "datos": {
-    "placa": "MOT-1234",
+    "placa": "MOT-1232",
     "marca": "Honda",
-    "modelo": "CBR600",
+    "modelo": "CBG600",
     "color": "Rojo",
     "anio": 2022,
     "clasificacion": "GASOLINA",

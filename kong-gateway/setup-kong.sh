@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Setup Kong Gateway con todos los microservicios
-KONG_ADMIN="http://localhost:8001"
+# Dentro del contenedor kong-setup, "localhost" es el propio contenedor, no
+# Kong: hay que usar el KONG_ADMIN que pasa docker-compose (http://kong:8001).
+# Se deja el fallback a localhost por si el script se corre a mano en el host.
+KONG_ADMIN="${KONG_ADMIN:-http://localhost:8001}"
 
 echo "🔧 Configurando Kong Gateway..."
 sleep 2
@@ -96,6 +99,15 @@ curl -s -X POST "$KONG_ADMIN/services/zonas-service/routes" \
     "strip_path": false
   }' > /dev/null
 
+# Ruta Espacios (usada por el dashboard de monitoreo)
+curl -s -X POST "$KONG_ADMIN/services/zonas-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "zonas-espacios-api",
+    "paths": ["/api/v1/espacios"],
+    "strip_path": false
+  }' > /dev/null
+
 # ============================
 # TICKETS
 # ============================
@@ -115,6 +127,19 @@ curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
     "name": "tickets-api",
     "paths": ["/tickets"],
     "strip_path": false
+  }' > /dev/null
+
+# Ruta SSE (dashboard de monitoreo de espacios en tiempo real). Kong bufferea
+# las respuestas por defecto (response_buffering), lo que rompe un stream que
+# nunca termina: hay que desactivarlo para que los eventos lleguen en vivo.
+curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "tickets-sse",
+    "paths": ["/sse"],
+    "strip_path": false,
+    "request_buffering": false,
+    "response_buffering": false
   }' > /dev/null
 
 # ============================
@@ -160,6 +185,7 @@ echo "  🚗 Vehículos:  http://localhost:8000/vehiculos"
 echo "  👥 Personas:   http://localhost:8000/personas"
 echo "  📍 Zonas:      http://localhost:8000/zonas"
 echo "  🎫 Tickets:    http://localhost:8000/tickets"
+echo "  📡 SSE Espacios: http://localhost:8000/sse/espacios"
 echo "  🧾 Auditoría:  http://localhost:8000/audit"
 echo ""
 echo "📚 SWAGGER DIRECTO EN PUERTOS NATIVOS:"

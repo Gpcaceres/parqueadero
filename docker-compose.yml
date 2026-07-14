@@ -190,6 +190,7 @@ services:
       RABBITMQ_PASS: guest
       RABBITMQ_EXCHANGE: audit_exchange
       RABBITMQ_ROUTING_KEY: audit.event
+      JWT_SECRET: parqueadero-shared-jwt-secret-2026-min32bytes
     depends_on:
       postgres:
         condition: service_healthy
@@ -231,6 +232,7 @@ services:
       RABBITMQ_PASS: guest
       RABBITMQ_EXCHANGE: audit_exchange
       RABBITMQ_ROUTING_KEY: audit.event
+      JWT_SECRET: parqueadero-shared-jwt-secret-2026-min32bytes
     depends_on:
       postgres:
         condition: service_healthy
@@ -272,6 +274,7 @@ services:
       RABBITMQ_PASS: guest
       RABBITMQ_EXCHANGE: audit_exchange
       RABBITMQ_ROUTING_KEY: audit.event
+      JWT_SECRET: parqueadero-shared-jwt-secret-2026-min32bytes
     depends_on:
       postgres:
         condition: service_healthy
@@ -311,6 +314,7 @@ services:
       SPRING_RABBITMQ_PASSWORD: guest
       AUDIT_RABBITMQ_EXCHANGE: audit_exchange
       AUDIT_RABBITMQ_ROUTING_KEY: audit.event
+      JWT_SECRET: parqueadero-shared-jwt-secret-2026-min32bytes
     depends_on:
       postgres:
         condition: service_healthy
@@ -355,6 +359,7 @@ services:
       RABBITMQ_PASS: guest
       RABBITMQ_EXCHANGE: audit_exchange
       RABBITMQ_ROUTING_KEY: audit.event
+      JWT_SECRET: parqueadero-shared-jwt-secret-2026-min32bytes
     depends_on:
       postgres:
         condition: service_healthy

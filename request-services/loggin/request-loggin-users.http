@@ -10,7 +10,7 @@ Content-Type: {{contentType}}
   "password": "ClaveIncorrecta"
 }
 
-### 2. Login usuario base (sin rol asignado; ver variables compartidas clienteUserName/clientePassword)
+### 2. Login usuario base (varios roles asignado; ver variables compartidas clienteUserName/clientePassword)
 POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 

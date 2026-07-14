@@ -1,0 +1,34 @@
+server:
+  # Confiar en X-Forwarded-For (lo agrega Kong al proxyear), para que
+  # HttpServletRequest.getRemoteAddr() refleje la IP real del cliente.
+  forward-headers-strategy: native
+
+spring:
+  application:
+    name: zonas
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/zonas_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update # Mantiene los datos, solo actualiza el esquema
+    show-sql: true
+    properties:
+      hibernate:
+        "[format_sql]": true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+# Configuración de Swagger/OpenAPI
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+  api-docs:
+    path: /v3/api-docs

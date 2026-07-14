@@ -10,14 +10,14 @@ POST {{baseUrl}}/personas
 Content-Type: {{contentType}}
 
 {
-  "dni": "1717089997",
-  "email": "recau@test.com",
-  "first_name": "Recaudador",
-  "middle_name": "ESPE",
-  "last_name": "Sango",
+  "dni": "1718433624",
+  "email": "recaus@test.com",
+  "first_name": "Tnt",
+  "middle_name": "Buestan",
+  "last_name": "Buestans",
  
   "nationality": "Ecuador",
-  "phone": "999999999",
+  "phone": "999999998",
   "address": "Calle 123 # 45-67"
 }
 
