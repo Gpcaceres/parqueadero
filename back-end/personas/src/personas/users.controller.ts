@@ -31,16 +31,20 @@ export class UsersController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'root')
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -50,6 +54,8 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'root')
   updateActive(
     @Param('id') id: string,
     @Body('active') active: boolean,
@@ -59,6 +65,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'root')
   remove(@Param('id') id: string, @Req() req: Request) {
     return this.usersService.remove(id, normalizarIp(req.ip));
   }

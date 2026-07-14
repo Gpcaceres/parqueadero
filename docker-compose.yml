@@ -11,6 +11,11 @@
 # - Auditoría (3004) + RabbitMQ (5672/15672)
 # ============================================
 
+# Nombra el stack como "parqueadero-back-end" para que aparezca separado del
+# front-end (parqueadero-front-end) en Docker Desktop, simulando dos
+# despliegues independientes que comparten la red "parqueadero-network".
+name: parqueadero-back-end
+
 services:
   # ============================================
   # BASE DE DATOS POSTGRESQL COMPARTIDA
@@ -26,7 +31,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./back-end/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - parqueadero-network
     restart: unless-stopped
@@ -168,7 +173,7 @@ services:
   # ============================================
   asignacion-trazabilidad:
     build:
-      context: ./asignacion-trazabilidad
+      context: ./back-end/asignacion-trazabilidad
       dockerfile: Dockerfile
     container_name: asignacion-trazabilidad-app
     ports:
@@ -213,7 +218,7 @@ services:
   # ============================================
   vehiculos:
     build:
-      context: ./vehiculos
+      context: ./back-end/vehiculos
       dockerfile: Dockerfile
     container_name: vehiculos-app
     ports:
@@ -255,7 +260,7 @@ services:
   # ============================================
   personas:
     build:
-      context: ./personas
+      context: ./back-end/personas
       dockerfile: Dockerfile
     container_name: personas-app
     ports:
@@ -297,7 +302,7 @@ services:
   # ============================================
   zonas:
     build:
-      context: ./zonas
+      context: ./back-end/zonas
       dockerfile: Dockerfile
     container_name: zonas-app
     ports:
@@ -337,7 +342,7 @@ services:
   # ============================================
   ms-tickets:
     build:
-      context: ./ms-tickets
+      context: ./back-end/ms-tickets
       dockerfile: Dockerfile
     container_name: ms-tickets-app
     ports:
@@ -382,7 +387,7 @@ services:
   # ============================================
   ms-audit:
     build:
-      context: ./ms-audit
+      context: ./back-end/ms-audit
       dockerfile: Dockerfile
     container_name: ms-audit-app
     ports:
@@ -402,6 +407,7 @@ services:
       RABBITMQ_QUEUE: audit_queue
       RABBITMQ_EXCHANGE: audit_exchange
       RABBITMQ_ROUTING_KEY: audit.event
+      JWT_SECRET: parqueadero-shared-jwt-secret-2026-min32bytes
       THROTTLE_TTL: 60
       THROTTLE_LIMIT: 10
     depends_on:
@@ -426,8 +432,10 @@ services:
 # ============================================
 volumes:
   postgres_data:
+    name: parqueadero_postgres_data
     driver: local
   kong_db_data:
+    name: parqueadero_kong_db_data
     driver: local
 
 # ============================================
@@ -435,4 +443,5 @@ volumes:
 # ============================================
 networks:
   parqueadero-network:
+    name: parqueadero-network
     driver: bridge

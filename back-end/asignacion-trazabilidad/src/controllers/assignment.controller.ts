@@ -22,11 +22,17 @@ import { ZoneIntegrationService } from '../services/zone-integration.service';
 import { CreateAssignmentDto } from '../dtos/create-assignment.dto';
 import { AuditTrailFilterDto } from '../dtos/audit-trail.dto';
 import { OptionalAuthGuard } from '../auth/optional-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
-// UUID nil usado para representar al "sistema" como actor de auditoría
-// cuando no hay un usuario autenticado real (este servicio no tiene JWT
-// conectado todavía). performedByUserId es una columna uuid NOT NULL en
-// AuditTrail, así que no puede ser el literal "system".
+const WRITE_ROLES = ['admin', 'root', 'recaudador'];
+
+// UUID nil usado para representar al "sistema" como actor de auditoría en
+// las lecturas de auditoría (que no mutan nada y no requieren autenticar).
+// Los endpoints que sí mutan (crear/revocar asignación) exigen JwtAuthGuard,
+// así que ahí siempre hay un usuario real. performedByUserId es una columna
+// uuid NOT NULL en AuditTrail, así que no puede ser el literal "system".
 const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
 
 // La IP puede llegar como IPv4 mapeada a IPv6 (::ffff:172.18.0.5) cuando
@@ -80,6 +86,8 @@ export class AssignmentController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...WRITE_ROLES)
   async createAssignment(
     @Body() createAssignmentDto: CreateAssignmentDto,
     @Req() req: Request,
@@ -226,6 +234,8 @@ export class AssignmentController {
    */
   @Delete(':userId/:vehicleId')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...WRITE_ROLES)
   async revokeAssignment(
     @Param('userId') userId: string,
     @Param('vehicleId') vehicleId: string,

@@ -19,6 +19,9 @@ import {
   EMPLOYEE_ROLES,
   OptionalAuthGuard,
 } from '../auth/optional-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 // La IP puede llegar como IPv4 mapeada a IPv6 (::ffff:172.18.0.5) cuando
 // Node corre en Docker; se normaliza a IPv4 puro para pasar la validación
@@ -48,6 +51,7 @@ export class TicketsController {
 
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo ticket' })
+  @UseGuards(JwtAuthGuard)
   async create(@Body() createTicketDto: CreateTicketDto, @Req() req: any) {
     const id_empleado = this.employeeIdFrom(req.user);
     if (id_empleado) {
@@ -93,6 +97,8 @@ export class TicketsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Actualizar un ticket' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EMPLOYEE_ROLES)
   async update(
     @Param('id') id: string,
     @Body() updateTicketDto: UpdateTicketDto,
@@ -113,6 +119,8 @@ export class TicketsController {
 
   @Patch(':id/salida')
   @ApiOperation({ summary: 'Registrar salida del vehículo' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EMPLOYEE_ROLES)
   async registrarSalida(
     @Param('id') id: string,
     @Body() body: { fecha_salida: Date },
@@ -131,6 +139,8 @@ export class TicketsController {
 
   @Patch(':id/anular')
   @ApiOperation({ summary: 'Anular un ticket' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EMPLOYEE_ROLES)
   async anularTicket(
     @Param('id') id: string,
     @Body() body: { motivo?: string },
@@ -147,6 +157,8 @@ export class TicketsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Eliminar un ticket' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EMPLOYEE_ROLES)
   async remove(@Param('id') id: string, @Req() req: any) {
     await this.ticketsService.remove(
       id,

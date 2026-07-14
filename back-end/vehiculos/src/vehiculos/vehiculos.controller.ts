@@ -13,6 +13,11 @@ import { VehiculosService } from './vehiculos.service';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
 import { OptionalAuthGuard } from '../auth/optional-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+
+const WRITE_ROLES = ['admin', 'root', 'recaudador'];
 
 // La IP puede llegar como IPv4 mapeada a IPv6 (::ffff:172.18.0.5) cuando
 // Node corre en Docker; se normaliza a IPv4 puro para pasar la validación
@@ -27,6 +32,8 @@ export class VehiculosController {
   constructor(private readonly vehiculosService: VehiculosService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...WRITE_ROLES)
   create(@Body() createVehiculoDto: CreateVehiculoDto, @Req() req: any) {
     return this.vehiculosService.createVehiculo(
       createVehiculoDto,
@@ -47,6 +54,8 @@ export class VehiculosController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...WRITE_ROLES)
   update(
     @Param('id') id: string,
     @Body() updateVehiculoDto: UpdateVehiculoDto,
@@ -62,6 +71,8 @@ export class VehiculosController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...WRITE_ROLES)
   remove(@Param('id') id: string, @Req() req: any) {
     return this.vehiculosService.remove(
       id,

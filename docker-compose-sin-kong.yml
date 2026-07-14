@@ -5,6 +5,8 @@
 # Úsalo cuando no tengas conexión a Docker Hub
 # ============================================
 
+name: parqueadero-back-end-sin-kong
+
 services:
   # ============================================
   # BASE DE DATOS POSTGRESQL COMPARTIDA
@@ -20,7 +22,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./back-end/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - parqueadero-network
     restart: unless-stopped
@@ -35,7 +37,7 @@ services:
   # ============================================
   asignacion-trazabilidad:
     build:
-      context: ./asignacion-trazabilidad
+      context: ./back-end/asignacion-trazabilidad
       dockerfile: Dockerfile
     container_name: asignacion-trazabilidad-app
     ports:
@@ -69,7 +71,7 @@ services:
   # ============================================
   vehiculos:
     build:
-      context: ./vehiculos
+      context: ./back-end/vehiculos
       dockerfile: Dockerfile
     container_name: vehiculos-app
     ports:
@@ -92,7 +94,7 @@ services:
   # ============================================
   personas:
     build:
-      context: ./personas
+      context: ./back-end/personas
       dockerfile: Dockerfile
     container_name: personas-app
     ports:
@@ -115,7 +117,7 @@ services:
   # ============================================
   zonas:
     build:
-      context: ./zonas
+      context: ./back-end/zonas
       dockerfile: Dockerfile
     container_name: zonas-app
     ports:

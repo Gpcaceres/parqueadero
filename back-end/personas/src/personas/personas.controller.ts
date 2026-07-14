@@ -31,16 +31,20 @@ export class PersonasController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll() {
     return this.personasService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this.personasService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'root')
   update(
     @Param('id') id: string,
     @Body() updatePersonaDto: UpdatePersonaDto,
@@ -50,6 +54,8 @@ export class PersonasController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'root')
   remove(@Param('id') id: string, @Req() req: Request) {
     return this.personasService.remove(id, normalizarIp(req.ip));
   }
