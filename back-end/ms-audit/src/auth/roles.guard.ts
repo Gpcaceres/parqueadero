@@ -6,7 +6,14 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
+    // getAllAndOverride revisa el método y, si ahí no hay metadata, cae al
+    // controller -- AuditController pone @Roles() a nivel de clase (aplica
+    // igual a todas sus rutas), y reflector.get() con solo getHandler()
+    // nunca la encuentra ahí, dejando el guard como no-op silencioso.
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiredRoles) {
       return true;

@@ -8,8 +8,8 @@
   border-left: 6px solid #ef4444;
 }
 .bg-reservado {
-  background-color: #fef3c7; /* amarillo claro */
-  border-left: 6px solid #f59e0b;
+  background-color: #ede9fe; /* violeta claro, distinto del ámbar de mantenimiento */
+  border-left: 6px solid #4a3aa7;
 }
 .bg-mantenimiento {
   background-color: #fef3c7; /* amarillo claro */

@@ -1,15 +1,71 @@
-@baseUrl = http://localhost:3003
+@baseUrlPersonas = http://localhost:3001
+@baseUrlVehiculos = http://localhost:3000
+@baseUrlZonas = http://localhost:8080/api/v1
+@baseUrlTickets = http://localhost:3003
 @contentType = application/json
 
-# Las pruebas de creación de tickets (que son, en esencia, la asignación de un
-# ticket a un usuario + vehículo + espacio) se movieron a:
-#
-#   request-services/asignar-tickets/usuario.http
-#   request-services/asignar-tickets/clientes.http
-#   request-services/asignar-tickets/recaudador.http
-#   request-services/asignar-tickets/administrador.http
-#
-# Ahí se cubre el flujo completo por rol, incluyendo la verificación previa
-# del vehículo y su zona/espacio antes de crear el ticket. Este archivo queda
-# solo para lectura/actualización/eliminación genéricas (ver tickets-read.http
-# y tickets-update-delete.http).
+# Flujo completo de creación de ticket desde quien lo genera: el recaudador
+# (o admin) que atiende la caseta cuando ingresa un vehículo. POST /tickets
+# es staff-only (admin/recaudador/root, ver tickets.controller.ts) -- un
+# cliente no puede crear su propio ticket (ver asignar-tickets/clientes.http).
+# Cubre: login, consultar espacios para elegir dónde asignar, crear el
+# ticket, verlo entre los asignados, y cerrarlo (salida + recaudación).
+
+### 0. Login como recaudador (quien atiende la caseta y genera el ticket)
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{recaudadorUserName}}",
+  "password": "{{recaudadorPassword}}"
+}
+
+### 1. Consultar los espacios de la zona para elegir uno DISPONIBLE
+GET {{baseUrlZonas}}/espacios/zona/{{zonaId}}
+Accept: application/json
+
+### 2. Verificar que el vehículo que va a ingresar existe
+GET {{baseUrlVehiculos}}/vehiculos/{{vehiculoId}}
+Accept: application/json
+
+### 3. Crear el ticket (asigna al vehículo el espacio elegido en el paso 1)
+# id_empleado se autocompleta con el usuario del token (rol admin/recaudador/root)
+# @name crearTicket
+POST {{baseUrlTickets}}/tickets
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "id_usuario": "{{userId}}",
+  "id_espacio": "{{espacioId}}",
+  "id_vehiculo": "{{vehiculoPlaca}}",
+  "tipo_vehiculo": "Auto",
+  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+}
+
+### 4. Ver los tickets asignados al usuario (confirmar que quedó creado)
+GET {{baseUrlTickets}}/tickets/usuario/{{userId}}
+Accept: application/json
+
+### 5. Registrar la salida del vehículo (cierra el ticket)
+PATCH {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}/salida
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "fecha_salida": "2026-07-08T11:00:00.000Z"
+}
+
+### 6. Registrar la recaudación (valor cobrado por el tiempo de estacionamiento)
+PATCH {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "valor_recaudado": 3.5
+}
+
+### 7. Ver el ticket ya cerrado, con su recaudación
+GET {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Accept: application/json

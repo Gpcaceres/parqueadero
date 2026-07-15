@@ -3,6 +3,7 @@
 @baseUrlZonas = http://localhost:8080/api/v1
 @baseUrlTickets = http://localhost:3003
 @baseUrlAsignacion = http://localhost:3002
+@baseUrlAudit = http://localhost:3004/audit
 @contentType = application/json
 
 # ============================================================

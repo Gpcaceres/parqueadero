@@ -36,6 +36,16 @@ const fetchJson = async (url) => {
   }
 };
 
+// Color del badge por estado (debe cubrir los 5 valores de EstadoEspacio en
+// el backend: DISPONIBLE, OCUPADO, RESERVADO, MANTENIMIENTO, INACTIVO).
+const BADGE_CLASS_POR_ESTADO = {
+  DISPONIBLE: "bg-green-200 text-green-800",
+  OCUPADO: "bg-red-200 text-red-800",
+  RESERVADO: "bg-violet-200 text-violet-800",
+  MANTENIMIENTO: "bg-amber-200 text-amber-800",
+  INACTIVO: "bg-gray-200 text-gray-800",
+};
+
 // El servicio de zonas no incluye el nombre de la zona en cada espacio, así
 // que se resuelve aparte con un mapa idZona -> nombre.
 const obtenerMapaZonas = async () => {
@@ -68,13 +78,7 @@ const renderizarEspacios = (espacios, mapaZonas) => {
                 <div class="text-sm text-gray-600">Tipo: ${esp.tipo || "N/A"}</div>
                 <div class="mt-2 flex items-center justify-between">
                     <span class="px-2 py-1 text-xs font-semibold rounded-full
-                        ${
-                          estado === "DISPONIBLE"
-                            ? "bg-green-200 text-green-800"
-                            : estado === "OCUPADO"
-                              ? "bg-red-200 text-red-800"
-                              : "bg-yellow-200 text-yellow-800"
-                        }">
+                        ${BADGE_CLASS_POR_ESTADO[estado] || "bg-yellow-200 text-yellow-800"}">
                         ${estado}
                     </span>
                     <span class="text-xs text-gray-400">ID: ${esp.idEspacio.slice(0, 8)}</span>

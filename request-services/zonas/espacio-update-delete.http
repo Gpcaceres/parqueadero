@@ -32,4 +32,33 @@ PATCH {{baseUrl}}/espacios/{{espacioId}}/activar-desactivar
 Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
 
+### 3. Reservar espacio (estado debe ser uno de: DISPONIBLE, OCUPADO,
+# RESERVADO, MANTENIMIENTO, INACTIVO). El dashboard (front-end/dashboard-
+# cliente) pinta este estado en un color propio (coral suave), distinto del
+# verde de DISPONIBLE y el rojo de OCUPADO -- se refleja solo, ya que el
+# dashboard consulta GET /api/v1/espacios sin filtrar por estado y colorea
+# la tarjeta según lo que reciba.
+PUT {{baseUrl}}/espacios/{{espacioId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "idZona": "{{zonaId}}",
+  "descripcion": "Espacio reservado para prueba",
+  "tipo": "MOTO",
+  "estado": "RESERVADO"
+}
+
+### 4. Poner espacio en mantenimiento (color ámbar en el dashboard, distinto
+# del coral de RESERVADO)
+PUT {{baseUrl}}/espacios/{{espacioId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "idZona": "{{zonaId}}",
+  "descripcion": "Espacio en mantenimiento para prueba",
+  "tipo": "MOTO",
+  "estado": "MANTENIMIENTO"
+}
 

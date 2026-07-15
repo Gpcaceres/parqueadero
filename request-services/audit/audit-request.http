@@ -1,0 +1,66 @@
+@baseUrlPersonas = http://localhost:3001
+@baseUrlAudit = http://localhost:3004/audit
+@contentType = application/json
+
+# GET/POST /audit exigen un token con rol admin o root (ver
+# audit.controller.ts): los eventos de auditoría llegan normalmente por
+# RabbitMQ (AuditConsumer), este endpoint HTTP es solo para consulta manual
+# y pruebas, así que queda igual de restringido que la lectura.
+
+### 0. Login como admin
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### 1. Listar todos los eventos de auditoría
+GET {{baseUrlAudit}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+Accept: application/json
+
+### 2. Crear un evento de auditoría manualmente (prueba)
+# accion debe ser una de: CREATE, UPDATE, DELETE, LOGIN, LOGOUT, SELECT
+# entidad solo letras mayúsculas y guiones medios
+# @name crearEvento
+POST {{baseUrlAudit}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "servicio": "ms-tickets",
+  "accion": "CREATE",
+  "entidad": "TICKET",
+  "datos": { "nota": "evento de prueba manual" },
+  "usuario": "{{adminUserName}}",
+  "rol": "admin",
+  "ip": "127.0.0.1",
+  "mac": "AA:BB:CC:DD:EE:FF"
+}
+
+### 3. Obtener el evento recién creado por ID
+GET {{baseUrlAudit}}/{{crearEvento.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.access_token}}
+Accept: application/json
+
+### 4. Sin token -> debe dar 401
+GET {{baseUrlAudit}}
+Accept: application/json
+
+### 5. Con token de un rol sin permiso (ej. cliente) -> debe dar 403
+# @name loginCliente
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
+
+###
+GET {{baseUrlAudit}}
+Authorization: Bearer {{loginCliente.response.body.$.access_token}}
+Accept: application/json
