@@ -1,10 +1,24 @@
+@baseUrlPersonas = http://localhost:3001
 @baseUrl = http://localhost:8080/api/v1
 @contentType = application/json
+
+# POST /espacios exige un token con rol admin, root o recaudador.
+
+### 0. Login como admin
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
 
 ### 1. Crear espacio (usa la variable compartida zonaId)
 # tipo debe ser uno de: MOTO, CARRO, AUTOBUS
 POST {{baseUrl}}/espacios
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "idZona": "{{zonaId}}",

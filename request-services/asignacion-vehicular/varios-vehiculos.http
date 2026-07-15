@@ -1,3 +1,4 @@
+@baseUrlPersonas = http://localhost:3001
 @baseUrlAsignacion = http://localhost:3002
 @contentType = application/json
 
@@ -13,9 +14,19 @@
 # vehículo solo puede estar activo en un propietario a la vez — pero un
 # propietario sí puede tener tantos vehículos como quiera.
 #
-# Los endpoints de asignacion-trazabilidad no tienen ningún guard de auth,
-# así que no hace falta login aquí.
+# Crear/revocar asignaciones ahora exige un token con rol admin, root o
+# recaudador (ver assignment-crud.http); las lecturas siguen abiertas.
 # ============================================================
+
+### 0. Login como admin
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
 
 ### ============================================================
 ### PASO 1/3: asignar el primer vehículo al cliente
@@ -24,6 +35,7 @@
 ### 1. Asignar vehiculoId al cliente compartido (userId)
 POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "userId": "{{userId}}",
@@ -42,6 +54,7 @@ Accept: application/json
 ### 3. Asignar vehiculoId2 al mismo cliente
 POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "userId": "{{userId}}",
@@ -60,6 +73,7 @@ Accept: application/json
 ### 5. Asignar vehiculoId3 al mismo cliente
 POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "userId": "{{userId}}",
@@ -82,6 +96,7 @@ Accept: application/json
 ### 8. Reintentar asignar vehiculoId (ya asignado) -> 409 esperado
 POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "userId": "{{userId}}",
@@ -96,14 +111,17 @@ Content-Type: {{contentType}}
 
 ### 9. Revocar vehiculoId
 DELETE {{baseUrlAsignacion}}/api/asignaciones/{{userId}}/{{vehiculoId}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
 
 ### 10. Revocar vehiculoId2
 DELETE {{baseUrlAsignacion}}/api/asignaciones/{{userId}}/{{vehiculoId2}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
 
 ### 11. Revocar vehiculoId3
 DELETE {{baseUrlAsignacion}}/api/asignaciones/{{userId}}/{{vehiculoId3}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
 
 ### 12. Ver flota del cliente (debe quedar vacía otra vez)

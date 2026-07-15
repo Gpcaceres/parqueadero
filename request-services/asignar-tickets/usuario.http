@@ -6,12 +6,22 @@
 @contentType = application/json
 
 # Caso: usuario base (sin rol especial) registra el ingreso de SU vehículo.
-# El servicio de tickets no tiene ningún guard de autenticación, así que esto
-# funciona igual con o sin JWT; lo relevante aquí son los PRE-REQUISITOS de
-# negocio antes de crear el ticket:
+# ms-tickets ahora exige estar autenticado para crear un ticket (cualquier
+# rol alcanza, incluido uno sin rol especial); por eso el paso 0 hace login.
+# Lo demás son los PRE-REQUISITOS de negocio antes de crear el ticket:
 #   1) el vehículo debe existir en el servicio de vehículos,
 #   2) el vehículo debería estar ASIGNADO a este usuario (asignacion-trazabilidad),
 #   3) el espacio debe existir, pertenecer a una zona y estar DISPONIBLE.
+
+### 0. Login con el usuario base (sin rol especial)
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{clienteUserName}}",
+  "password": "{{clientePassword}}"
+}
 
 ### 1. Verificar que el vehículo compartido existe
 GET {{baseUrlVehiculos}}/vehiculos/{{vehiculoId}}
@@ -31,8 +41,10 @@ Accept: application/json
 # "/api/vehiculos/:id" en vez de "/vehiculos/:id". Son 3 bugs de integración
 # entre microservicios (ver request-services/asignacion-vehicular/), no algo
 # que se resuelva en las pruebas de tickets. Se deja el paso documentado como
-# parte del flujo real de negocio.
-POST {{baseUrlAsignacion}}/api/api/asignaciones
+# parte del flujo real de negocio. Además, crear/revocar asignaciones ahora
+# exige rol admin/root/recaudador -- un "usuario base" tampoco podría hacer
+# esto por su cuenta, tendría que pedírselo a un admin.
+POST {{baseUrlAsignacion}}/api/asignaciones
 Content-Type: {{contentType}}
 
 {
@@ -45,6 +57,7 @@ Content-Type: {{contentType}}
 # @name crearTicket
 POST {{baseUrlTickets}}/tickets
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "id_usuario": "{{userId}}",
@@ -63,5 +76,19 @@ GET {{baseUrlTickets}}/tickets/espacio/{{espacioId}}
 Accept: application/json
 
 ### 7. Cleanup: eliminar el ticket creado en el paso 4
+# DELETE /tickets es staff-only; un usuario base no puede eliminar su propio
+# ticket, así que este paso necesita el token de un admin (ver personas.http
+# o clientes.http para un login admin de referencia).
+# @name loginAdmin
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+###
 DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
 Accept: application/json

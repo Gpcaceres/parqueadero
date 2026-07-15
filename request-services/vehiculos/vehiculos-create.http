@@ -1,9 +1,23 @@
+@baseUrlPersonas = http://localhost:3001
 @baseUrl = http://localhost:3000
 @contentType = application/json
+
+# POST /vehiculos exige un token con rol admin, root o recaudador.
+
+### 0. Login como admin
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
 
 ### 1. Crear Auto
 POST {{baseUrl}}/vehiculos
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "tipo": "Auto",
@@ -23,6 +37,7 @@ Content-Type: {{contentType}}
 ### 2. Crear Motocicleta
 POST {{baseUrl}}/vehiculos
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "tipo": "Moto",

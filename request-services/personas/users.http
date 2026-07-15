@@ -1,8 +1,22 @@
 @baseUrl = http://localhost:3001
 @contentType = application/json
 
+# GET /users exige estar autenticado (cualquier rol); POST/PUT/PATCH/DELETE
+# exigen admin o root (ver users.controller.ts).
+
+### 0. Login como admin
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
 ### 1. Listar todos los usuarios
 GET {{baseUrl}}/users
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
 
 ### 2. Crear usuario (solo id_user + password)
@@ -11,6 +25,7 @@ Accept: application/json
 # nombre de esa persona, y el email de la persona pasa a ser {username}@test.com
 POST {{baseUrl}}/users
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "id_user": "{{personaId}}",
@@ -19,11 +34,13 @@ Content-Type: {{contentType}}
 
 ### 3. Obtener usuario por ID (usa la variable compartida userId)
 GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
 
 ### 4. Desactivar usuario
 PATCH {{baseUrl}}/users/{{userId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "active": false
@@ -32,6 +49,7 @@ Content-Type: {{contentType}}
 ### 5. Activar usuario
 PATCH {{baseUrl}}/users/{{userId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "active": true
@@ -40,6 +58,7 @@ Content-Type: {{contentType}}
 ### 6. Actualizar username y/o password
 PUT {{baseUrl}}/users/{{userId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "username": "{{clienteUserName}}",
@@ -48,4 +67,5 @@ Content-Type: {{contentType}}
 
 ### 7. Eliminar usuario
 DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json

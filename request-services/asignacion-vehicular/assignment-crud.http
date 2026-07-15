@@ -1,8 +1,22 @@
+@baseUrlPersonas = http://localhost:3001
 @baseUrl = http://localhost:3002
 @contentType = application/json
 
 # Prefijo real del servicio: /api/asignaciones (el bug de doble prefijo
-# /api/api/asignaciones ya fue corregido en assignment.controller.ts).
+# /api/api/asignaciones ya fue corregido en la ruta de Kong, no en el
+# controller -- éste siempre usó /api/asignaciones).
+# Crear/revocar una asignación exige un token con rol admin, root o
+# recaudador; las lecturas siguen abiertas.
+
+### 0. Login como admin
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
 
 ### 1. Obtener todas las asignaciones
 GET {{baseUrl}}/api/asignaciones
@@ -15,6 +29,7 @@ Accept: application/json
 ### 3. Crear asignación de vehículo a usuario
 POST {{baseUrl}}/api/asignaciones
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "userId": "{{userId}}",
@@ -36,4 +51,5 @@ Accept: application/json
 
 ### 7. Revocar asignación
 DELETE {{baseUrl}}/api/asignaciones/{{userId}}/660e8400-e29b-41d4-a716-446655440001
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json

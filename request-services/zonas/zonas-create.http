@@ -1,10 +1,24 @@
+@baseUrlPersonas = http://localhost:3001
 @baseUrl = http://localhost:8080/api/v1
 @contentType = application/json
+
+# POST /zonas exige un token con rol admin, root o recaudador.
+
+### 0. Login como admin
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
 
 ### 1. Crear zona
 # tipoZona debe ser uno de: VIP, REGULAR, INTERNA, EXTERNA, PREFERENCIAL
 POST {{baseUrl}}/zonas
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "nombre": "Zona Prueba",

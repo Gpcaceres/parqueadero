@@ -48,9 +48,12 @@ GET {{baseUrlZonas}}/espacios/zona/{{zonaId}}
 Accept: application/json
 
 ### 5. Crear ticket de ingreso (rol cliente)
+# ms-tickets exige estar autenticado para crear (cualquier rol, incluido
+# cliente); solo actualizar/anular/eliminar sigue restringido a staff.
 # @name crearTicket
 POST {{baseUrlTickets}}/tickets
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "id_usuario": "{{userId}}",
@@ -65,7 +68,10 @@ GET {{baseUrlTickets}}/tickets/usuario/{{userId}}
 Accept: application/json
 
 ### 7. Cleanup: eliminar el ticket creado en el paso 5
+# DELETE /tickets es staff-only (admin/recaudador/root): cliente no puede
+# eliminar su propio ticket, así que se usa el token del admin.
 DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
 Accept: application/json
 
 ### 8. Quitar el rol cliente del usuario (cleanup)

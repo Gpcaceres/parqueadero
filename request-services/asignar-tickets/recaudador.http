@@ -92,6 +92,7 @@ Accept: application/json
 
 ### 8. Cleanup: eliminar el ticket creado en el paso 4
 DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
 
 ### 9. Quitar el rol recaudador de la cuenta recaudador (cleanup)

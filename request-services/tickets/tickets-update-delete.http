@@ -1,13 +1,28 @@
+@baseUrlPersonas = http://localhost:3001
 @baseUrl = http://localhost:3003
 @contentType = application/json
 
 # NOTA: "registrar salida" (2) exige que el ticket esté "activo"; si {{ticketId}}
 # ya fue cerrado (salida/anulado) en una corrida previa, crea uno nuevo primero
 # en request-services/asignar-tickets/ y actualiza la variable ticketId.
+#
+# Actualizar/anular/eliminar un ticket (y registrar salida) exige un token con
+# rol admin, root o recaudador (crear un ticket sigue abierto también a cliente).
+
+### 0. Login como admin
+# @name login
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
 
 ### 1. Actualizar ticket (usa la variable compartida ticketId/espacioId)
 PATCH {{baseUrl}}/tickets/{{ticketId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "id_espacio": "{{espacioId}}",
@@ -17,6 +32,7 @@ Content-Type: {{contentType}}
 ### 2. Registrar salida de ticket
 PATCH {{baseUrl}}/tickets/{{ticketId}}/salida
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "fecha_salida": "2026-07-06T13:00:00.000Z"
@@ -25,6 +41,7 @@ Content-Type: {{contentType}}
 ### 3. Anular ticket
 PATCH {{baseUrl}}/tickets/{{ticketId}}/anular
 Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
   "motivo": "Prueba de anulación"
@@ -32,4 +49,5 @@ Content-Type: {{contentType}}
 
 ### 4. Eliminar ticket
 DELETE {{baseUrl}}/tickets/{{ticketId}}
+Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
