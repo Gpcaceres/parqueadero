@@ -5,10 +5,13 @@
 @baseUrlAsignacion = http://localhost:3002
 @contentType = application/json
 
-# Caso: usuario base (sin rol especial) registra el ingreso de SU vehículo.
-# ms-tickets ahora exige estar autenticado para crear un ticket (cualquier
-# rol alcanza, incluido uno sin rol especial); por eso el paso 0 hace login.
-# Lo demás son los PRE-REQUISITOS de negocio antes de crear el ticket:
+# Caso: usuario base (sin rol especial) intenta registrar el ingreso de SU
+# vehículo. POST /tickets ahora es staff-only (admin/recaudador/root): un
+# usuario sin ese rol NUNCA puede generar su propio ticket, sin importar que
+# esté autenticado -- por diseño, es el encargado de caseta/administración
+# quien genera el ticket para el cliente. El paso 4a prueba justo eso (403);
+# el 4b muestra el flujo real (un admin lo crea por él).
+# Los pasos 1-3 son los PRE-REQUISITOS de negocio antes de crear el ticket:
 #   1) el vehículo debe existir en el servicio de vehículos,
 #   2) el vehículo debería estar ASIGNADO a este usuario (asignacion-trazabilidad),
 #   3) el espacio debe existir, pertenecer a una zona y estar DISPONIBLE.
@@ -53,11 +56,33 @@ Content-Type: {{contentType}}
   "notes": "Vehículo asignado antes de generar el ticket"
 }
 
-### 4. Crear ticket de ingreso para el usuario y su vehículo
-# @name crearTicket
+### 4a. El usuario intenta crear su propio ticket -> debe dar 403
 POST {{baseUrlTickets}}/tickets
 Content-Type: {{contentType}}
 Authorization: Bearer {{login.response.body.$.access_token}}
+
+{
+  "id_usuario": "{{userId}}",
+  "id_espacio": "{{espacioId}}",
+  "id_vehiculo": "{{vehiculoPlaca}}",
+  "tipo_vehiculo": "Auto",
+  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+}
+
+### 4b. Flujo real: un admin genera el ticket para el usuario
+# @name loginAdmin
+POST {{baseUrlPersonas}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### @name crearTicket
+POST {{baseUrlTickets}}/tickets
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
 
 {
   "id_usuario": "{{userId}}",
@@ -75,20 +100,9 @@ Accept: application/json
 GET {{baseUrlTickets}}/tickets/espacio/{{espacioId}}
 Accept: application/json
 
-### 7. Cleanup: eliminar el ticket creado en el paso 4
+### 7. Cleanup: eliminar el ticket creado en el paso 4b
 # DELETE /tickets es staff-only; un usuario base no puede eliminar su propio
-# ticket, así que este paso necesita el token de un admin (ver personas.http
-# o clientes.http para un login admin de referencia).
-# @name loginAdmin
-POST {{baseUrlPersonas}}/auth/login
-Content-Type: {{contentType}}
-
-{
-  "username": "{{adminUserName}}",
-  "password": "{{adminPassword}}"
-}
-
-###
+# ticket, así que este paso reusa el token del admin logeado en 4b.
 DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
 Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
 Accept: application/json

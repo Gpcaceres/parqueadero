@@ -5,7 +5,7 @@
 export const ROLES_CONFIG = {
   cliente: {
     name: 'cliente',
-    description: 'Usuario cliente del sistema de parqueadero',
+    description: 'Usuario cliente del sistema de parqueadero: solo lectura, no puede crear/modificar zonas, espacios, vehículos ni tickets (eso lo hace el personal que administra el sistema o genera el ticket).',
     permissions: [
       'auth.login',
       'auth.register',
@@ -13,13 +13,9 @@ export const ROLES_CONFIG = {
       'zones.read',
       'spaces.read',
       'vehicles.read',
-      'vehicles.create',
-      'vehicles.update',
-      'vehicles.delete',
       'profile.read',
       'profile.update',
       'tickets.read',
-      'tickets.create',
     ],
   },
   admin: {

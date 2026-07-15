@@ -31,3 +31,5 @@ Authorization: Bearer {{login.response.body.$.access_token}}
 PATCH {{baseUrl}}/espacios/{{espacioId}}/activar-desactivar
 Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
+
+

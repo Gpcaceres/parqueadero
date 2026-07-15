@@ -10,11 +10,11 @@
 # tickets.create, tickets.update, spaces.read, spaces.update.
 # Asignar el rol exige un token con rol admin o root (ver user-role.controller.ts).
 #
-# ms-tickets tiene un OptionalAuthGuard (no bloquea sin token, pero si mandas
-# uno válido, popula request.user). Si request.user tiene rol admin,
-# recaudador o root, "id_empleado" se autocompleta desde ese token en
-# create/update/salida -- por eso los pasos 4, 5 y 6 mandan el Authorization
-# del recaudador, y YA NO se manda "id_empleado" a mano en el body.
+# crear/actualizar/registrar-salida/anular/eliminar tickets exige un token
+# con rol admin, recaudador o root (staff-only; un cliente no puede hacer
+# nada de esto, ver asignar-tickets/clientes.http). Además, "id_empleado" se
+# autocompleta desde ese mismo token -- por eso los pasos 4, 5 y 6 mandan el
+# Authorization del recaudador, y YA NO se manda "id_empleado" a mano en el body.
 
 ### 0. Login como admin (para asignar/quitar el rol recaudador)
 # @name loginAdmin

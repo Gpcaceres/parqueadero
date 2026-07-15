@@ -4,10 +4,14 @@
 @baseUrlTickets = http://localhost:3003
 @contentType = application/json
 
-# Caso: usuario con rol "cliente" registra el ingreso de su propio vehículo.
-# Permisos del rol cliente (ver roles-permissions.seed.ts): tickets.read,
-# tickets.create (no puede actualizar/anular/eliminar tickets de otros).
-# Asignar el rol exige un token con rol admin o root (ver user-role.controller.ts).
+# Caso: un cliente NO puede generar su propio ticket -- solo puede ver los
+# suyos (tickets.read). Crear/actualizar/anular/eliminar tickets es tarea del
+# personal (admin/recaudador/root): el encargado de caseta/administración es
+# quien genera el ticket para el cliente cuando este ingresa su vehículo.
+# Este archivo prueba justamente eso: 5a demuestra que el cliente recibe 403
+# al intentar crearlo, y 5b muestra el flujo real (el admin lo crea por él).
+# Asignar el rol cliente exige un token con rol admin o root (ver
+# user-role.controller.ts).
 
 ### 0. Login como admin (para asignar/quitar el rol cliente)
 # @name loginAdmin
@@ -47,10 +51,7 @@ Accept: application/json
 GET {{baseUrlZonas}}/espacios/zona/{{zonaId}}
 Accept: application/json
 
-### 5. Crear ticket de ingreso (rol cliente)
-# ms-tickets exige estar autenticado para crear (cualquier rol, incluido
-# cliente); solo actualizar/anular/eliminar sigue restringido a staff.
-# @name crearTicket
+### 5a. El cliente intenta crear su propio ticket -> debe dar 403
 POST {{baseUrlTickets}}/tickets
 Content-Type: {{contentType}}
 Authorization: Bearer {{login.response.body.$.access_token}}
@@ -63,11 +64,25 @@ Authorization: Bearer {{login.response.body.$.access_token}}
   "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
 }
 
-### 6. Ver mis tickets
+### 5b. Flujo real: el admin genera el ticket para el cliente
+# @name crearTicket
+POST {{baseUrlTickets}}/tickets
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
+
+{
+  "id_usuario": "{{userId}}",
+  "id_espacio": "{{espacioId}}",
+  "id_vehiculo": "{{vehiculoPlaca}}",
+  "tipo_vehiculo": "Auto",
+  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+}
+
+### 6. Ver mis tickets (el cliente sí puede leer los suyos)
 GET {{baseUrlTickets}}/tickets/usuario/{{userId}}
 Accept: application/json
 
-### 7. Cleanup: eliminar el ticket creado en el paso 5
+### 7. Cleanup: eliminar el ticket creado en el paso 5b
 # DELETE /tickets es staff-only (admin/recaudador/root): cliente no puede
 # eliminar su propio ticket, así que se usa el token del admin.
 DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}

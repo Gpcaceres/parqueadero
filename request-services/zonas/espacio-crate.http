@@ -23,6 +23,6 @@ Authorization: Bearer {{login.response.body.$.access_token}}
 {
   "idZona": "{{zonaId}}",
   "descripcion": "Espacio para carro estándar",
-  "tipo": "CARRO",
+  "tipo": "MOTO",
   "estado": "DISPONIBLE"
 }

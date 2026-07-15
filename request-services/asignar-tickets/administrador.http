@@ -9,9 +9,11 @@
 # los propios. Permisos del rol admin: tickets.read, tickets.create,
 # tickets.update (no incluye tickets.delete; solo "root" tiene "*").
 #
-# ms-tickets autocompleta "id_empleado" con el usuario del token cuando su
-# rol es admin/recaudador/root (OptionalAuthGuard) -- por eso el paso 5 manda
-# el Authorization del admin y no incluye "id_empleado" en el body.
+# POST /tickets ahora es staff-only (admin/recaudador/root): un cliente no
+# puede crear su propio ticket, solo el personal (ver asignar-tickets/
+# clientes.http). ms-tickets autocompleta "id_empleado" con el usuario del
+# token cuando su rol es admin/recaudador/root -- por eso el paso 5 manda el
+# Authorization del admin y no incluye "id_empleado" en el body.
 
 ### 1. Login como admin
 # @name login

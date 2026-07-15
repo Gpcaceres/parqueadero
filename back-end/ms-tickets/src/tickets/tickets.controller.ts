@@ -51,7 +51,8 @@ export class TicketsController {
 
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo ticket' })
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EMPLOYEE_ROLES)
   async create(@Body() createTicketDto: CreateTicketDto, @Req() req: any) {
     const id_empleado = this.employeeIdFrom(req.user);
     if (id_empleado) {

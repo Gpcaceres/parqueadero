@@ -21,8 +21,8 @@ Content-Type: {{contentType}}
 Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
-  "nombre": "Zona Prueba Actualizada",
-  "descripcion": "Zona actualizada desde prueba HTTP",
+  "nombre": "Zona Compartida",
+  "descripcion": "Zona base para variables compartidas",
   "tipoZona": "REGULAR",
   "capacidad": 2
 }

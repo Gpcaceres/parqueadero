@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
 import { SseService } from '../sse/sse.service';
 
@@ -23,7 +24,21 @@ export class ZoneIntegrationService {
   constructor(
     private readonly httpService: HttpService,
     private readonly sseService: SseService,
+    private readonly jwtService: JwtService,
   ) {}
+
+  // PUT /espacios en zonas exige un token con rol admin/root/recaudador (ver
+  // WriteAuthorizationFilter). Esta llamada es servicio-a-servicio, no viene
+  // de un usuario logeado, así que ms-tickets firma su propia identidad de
+  // sistema con el mismo JWT_SECRET compartido -- se ve en la auditoría como
+  // "ms-tickets-service" con rol admin, no como un usuario real.
+  private serviceToken(): string {
+    return this.jwtService.sign({
+      sub: 'ms-tickets-service',
+      username: 'ms-tickets-service',
+      roles: ['admin'],
+    });
+  }
 
   private async getEspacio(idEspacio: string): Promise<any | null> {
     try {
@@ -47,12 +62,16 @@ export class ZoneIntegrationService {
 
     try {
       await firstValueFrom(
-        this.httpService.put(`${this.zoneServiceUrl}/api/v1/espacios/${idEspacio}`, {
-          idZona: espacio.idZona,
-          descripcion: espacio.descripcion,
-          tipo: espacio.tipo,
-          estado,
-        }),
+        this.httpService.put(
+          `${this.zoneServiceUrl}/api/v1/espacios/${idEspacio}`,
+          {
+            idZona: espacio.idZona,
+            descripcion: espacio.descripcion,
+            tipo: espacio.tipo,
+            estado,
+          },
+          { headers: { Authorization: `Bearer ${this.serviceToken()}` } },
+        ),
       );
 
       // Notifica en tiempo real al dashboard vía SSE que el espacio cambió de
