@@ -6,6 +6,7 @@ import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { ZoneIntegrationService } from './zone-integration.service';
 import { EventPublisher, AuditEvent } from '../event-publisher.service';
+import { calcularValorRecaudado } from './tarifas';
 
 @Injectable()
 export class TicketsService {
@@ -70,6 +71,11 @@ export class TicketsService {
     }
 
     const ticket = this.ticketsRepository.create(createTicketDto);
+    // Se captura con la hora del servidor en el instante real de creación, en
+    // vez de recibirla del cliente: así las horas/fracción cobradas en
+    // tarifas.ts siempre corresponden al tiempo real transcurrido, igual que
+    // fecha_hora_salida en registrarSalida.
+    ticket.fecha_hora_ingreso = new Date();
     const ticketGuardado = await this.ticketsRepository.save(ticket);
 
     // El espacio pasa a OCUPADO mientras el ticket esté activo
@@ -172,7 +178,6 @@ export class TicketsService {
 
   async registrarSalida(
     id: string,
-    fecha_salida: Date,
     id_empleado?: string,
     ip?: string,
     usuario?: string,
@@ -184,8 +189,19 @@ export class TicketsService {
       throw new BadRequestException('El ticket no está activo');
     }
 
-    ticket.fecha_hora_salida = fecha_salida;
+    // Se captura con la hora del servidor en el instante real de la salida,
+    // en vez de recibirla del cliente: así la fecha registrada siempre
+    // coincide con el momento en que el espacio efectivamente se libera.
+    ticket.fecha_hora_salida = new Date();
     ticket.estado_ticket = EstadoTicket.PAGADO;
+    // El cobro se calcula solo a partir del plan elegido al crear el ticket
+    // y el tiempo real transcurrido (ver tarifas.ts) -- no se acepta un
+    // monto manual del cliente, por la misma razón que fecha_hora_salida.
+    ticket.valor_recaudado = calcularValorRecaudado(
+      ticket.tipo_tarifa,
+      ticket.fecha_hora_ingreso,
+      ticket.fecha_hora_salida,
+    );
     if (id_empleado) {
       ticket.id_empleado = id_empleado;
     }

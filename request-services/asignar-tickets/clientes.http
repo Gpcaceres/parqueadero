@@ -61,7 +61,7 @@ Authorization: Bearer {{login.response.body.$.access_token}}
   "id_espacio": "{{espacioId}}",
   "id_vehiculo": "{{vehiculoPlaca}}",
   "tipo_vehiculo": "Auto",
-  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+  "tipo_tarifa": "POR_HORA"
 }
 
 ### 5b. Flujo real: el admin genera el ticket para el cliente
@@ -75,7 +75,7 @@ Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
   "id_espacio": "{{espacioId}}",
   "id_vehiculo": "{{vehiculoPlaca}}",
   "tipo_vehiculo": "Auto",
-  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+  "tipo_tarifa": "POR_HORA"
 }
 
 ### 6. Ver mis tickets (el cliente sí puede leer los suyos)

@@ -236,6 +236,24 @@ cobertura-coverage.xml
 *.tmp
 
 # ============================================
+# LaTeX (compilación de los informes en Documentation/)
+# ============================================
+*.aux
+*.toc
+*.out
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+# Capturas de pantalla usadas en los informes: son pesadas y no aportan al
+# código, no se suben al repositorio remoto.
+Documentation/*/img/
+
+# ============================================
 # Comentario: INCLUIR EN GIT
 # ============================================
 # ✅ .env.example - Plantilla de variables

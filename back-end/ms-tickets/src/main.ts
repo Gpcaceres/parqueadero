@@ -1,9 +1,19 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Sin esto, los decoradores de class-validator en los DTOs (@IsUUID,
+  // @IsDate, @IsEnum...) nunca se ejecutan y cualquier campo extra en el
+  // body pasa sin filtrar -- por ejemplo, fecha_hora_salida/estado_ticket
+  // se podían fijar a mano vía el PATCH genérico pese a estar excluidos de
+  // UpdateTicketDto, porque nada validaba el DTO en tiempo de ejecución.
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+  );
 
   // Confiar solo en saltos desde la red privada de Docker (Kong), no en toda la
   // cadena. Con `true` se confía en cualquier hop y Express toma la IP más a la

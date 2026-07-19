@@ -7,6 +7,7 @@ import { TicketsController } from './tickets.controller';
 import { Ticket } from './entities/ticket.entity';
 import { OptionalAuthGuard } from '../auth/optional-auth.guard';
 import { ZoneIntegrationService } from './zone-integration.service';
+import { PersonaIntegrationService } from './persona-integration.service';
 import { EventPublisher } from '../event-publisher.service';
 import { SseModule } from '../sse/sse.module';
 
@@ -24,6 +25,7 @@ import { SseModule } from '../sse/sse.module';
     TicketsService,
     OptionalAuthGuard,
     ZoneIntegrationService,
+    PersonaIntegrationService,
     EventPublisher,
   ],
   exports: [TicketsService],

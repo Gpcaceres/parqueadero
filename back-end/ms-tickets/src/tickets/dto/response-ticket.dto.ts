@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { EstadoTicket } from '../entities/ticket.entity';
+import { EstadoTicket, TipoTarifa } from '../entities/ticket.entity';
 
 export class ResponseTicketDto {
   @Expose()
@@ -25,6 +25,9 @@ export class ResponseTicketDto {
 
   @Expose()
   estado_ticket!: EstadoTicket;
+
+  @Expose()
+  tipo_tarifa!: TipoTarifa;
 
   @Expose()
   id_empleado!: string | null;

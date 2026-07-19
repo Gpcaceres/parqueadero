@@ -5,6 +5,7 @@ import {
   Body,
   Patch,
   Param,
+  ParseUUIDPipe,
   Delete,
   Query,
   Req,
@@ -22,6 +23,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { PersonaIntegrationService } from './persona-integration.service';
 
 // La IP puede llegar como IPv4 mapeada a IPv6 (::ffff:172.18.0.5) cuando
 // Node corre en Docker; se normaliza a IPv4 puro para pasar la validación
@@ -34,7 +36,10 @@ function normalizarIp(ip?: string): string | undefined {
 @Controller('tickets')
 @UseGuards(OptionalAuthGuard)
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(
+    private readonly ticketsService: TicketsService,
+    private readonly personaIntegrationService: PersonaIntegrationService,
+  ) {}
 
   /**
    * Si la request viene autenticada con un rol "empleado" (admin, recaudador,
@@ -80,19 +85,28 @@ export class TicketsController {
 
   @Get('espacio/:id_espacio')
   @ApiOperation({ summary: 'Obtener ticket activo por espacio' })
-  async findByEspacio(@Param('id_espacio') id_espacio: string) {
-    return await this.ticketsService.findByEspacio(id_espacio);
+  async findByEspacio(@Param('id_espacio', ParseUUIDPipe) id_espacio: string) {
+    const ticket = await this.ticketsService.findByEspacio(id_espacio);
+    if (!ticket) {
+      return ticket;
+    }
+    // Se enriquece con el nombre del usuario para mostrarlo en el dashboard
+    // (el propio ticket solo guarda id_usuario); ver PersonaIntegrationService.
+    const nombre_usuario = await this.personaIntegrationService.obtenerNombreCompleto(
+      ticket.id_usuario,
+    );
+    return { ...ticket, nombre_usuario };
   }
 
   @Get('usuario/:id_usuario')
   @ApiOperation({ summary: 'Obtener tickets de un usuario' })
-  async findByUsuario(@Param('id_usuario') id_usuario: string) {
+  async findByUsuario(@Param('id_usuario', ParseUUIDPipe) id_usuario: string) {
     return await this.ticketsService.findByUsuario(id_usuario);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un ticket por ID' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return await this.ticketsService.findOne(id);
   }
 
@@ -101,7 +115,7 @@ export class TicketsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(...EMPLOYEE_ROLES)
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTicketDto: UpdateTicketDto,
     @Req() req: any,
   ) {
@@ -122,15 +136,14 @@ export class TicketsController {
   @ApiOperation({ summary: 'Registrar salida del vehículo' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(...EMPLOYEE_ROLES)
-  async registrarSalida(
-    @Param('id') id: string,
-    @Body() body: { fecha_salida: Date },
-    @Req() req: any,
-  ) {
+  async registrarSalida(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+    // fecha_hora_salida se captura con la hora del servidor en el momento en
+    // que se procesa la salida (ver TicketsService.registrarSalida); no se
+    // acepta del body, para que la sincronización del espacio a DISPONIBLE
+    // siempre corresponda al instante real en que ocurrió la acción.
     const id_empleado = this.employeeIdFrom(req.user);
     return await this.ticketsService.registrarSalida(
       id,
-      new Date(body.fecha_salida),
       id_empleado,
       normalizarIp(req.ip),
       req.user?.username,
@@ -143,7 +156,7 @@ export class TicketsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(...EMPLOYEE_ROLES)
   async anularTicket(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { motivo?: string },
     @Req() req: any,
   ) {
@@ -160,7 +173,7 @@ export class TicketsController {
   @ApiOperation({ summary: 'Eliminar un ticket' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(...EMPLOYEE_ROLES)
-  async remove(@Param('id') id: string, @Req() req: any) {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
     await this.ticketsService.remove(
       id,
       normalizarIp(req.ip),

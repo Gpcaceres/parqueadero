@@ -19,6 +19,7 @@ services:
       - "8085:80"
     volumes:
       - ./dashboard-cliente:/usr/share/nginx/html:ro
+      - ./nginx-no-cache.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - parqueadero-network
     restart: unless-stopped

@@ -65,37 +65,28 @@ Authorization: Bearer {{login.response.body.$.access_token}}
   "id_espacio": "{{espacioId}}",
   "id_vehiculo": "{{vehiculoPlaca}}",
   "tipo_vehiculo": "Auto",
-  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+  "tipo_tarifa": "POR_HORA"
 }
 
 ### 5. Registrar la salida del vehículo (id_empleado se autocompleta del token)
+# fecha_hora_salida ya no se manda: el servidor la captura sola con su hora
+# real al procesar la salida (ver TicketsService.registrarSalida). El cobro
+# (valor_recaudado) tampoco se manda a mano: se calcula solo a partir de
+# tipo_tarifa y el tiempo real transcurrido (ver tarifas.ts). Ya no existe
+# un PATCH para fijarlo manualmente.
 PATCH {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}/salida
-Content-Type: {{contentType}}
 Authorization: Bearer {{login.response.body.$.access_token}}
 
-{
-  "fecha_salida": "2026-07-08T11:00:00.000Z"
-}
-
-### 6. Registrar el cobro (id_empleado se autocompleta del token, no se manda a mano)
-PATCH {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
-Content-Type: {{contentType}}
-Authorization: Bearer {{login.response.body.$.access_token}}
-
-{
-  "valor_recaudado": 3.5
-}
-
-### 7. Ver el ticket ya cerrado
+### 6. Ver el ticket ya cerrado, con su recaudación ya calculada
 GET {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
 Accept: application/json
 
-### 8. Cleanup: eliminar el ticket creado en el paso 4
+### 7. Cleanup: eliminar el ticket creado en el paso 4
 DELETE {{baseUrlTickets}}/tickets/{{crearTicket.response.body.$.id_ticket}}
 Authorization: Bearer {{login.response.body.$.access_token}}
 Accept: application/json
 
-### 9. Quitar el rol recaudador de la cuenta recaudador (cleanup)
+### 8. Quitar el rol recaudador de la cuenta recaudador (cleanup)
 DELETE {{baseUrlPersonas}}/user-role/{{userRecaudadorId}}/{{roleIdRecaudador}}
 Authorization: Bearer {{loginAdmin.response.body.$.access_token}}
 Accept: application/json

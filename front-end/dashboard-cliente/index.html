@@ -34,12 +34,11 @@ index.html
         </div>
       </header>
 
-      <!-- Contenedor de tarjetas (grid) -->
-      <div
-        id="espaciosContainer"
-        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
-      >
-        <!-- Las tarjetas se inyectan dinámicamente desde app.js -->
+      <!-- Contenedor de zonas: cada zona es una sección con su propio
+           encabezado (nombre + disponibles/total) y su propia grilla de
+           tarjetas de espacio, inyectado dinámicamente desde app.js -->
+      <div id="espaciosContainer" class="space-y-8">
+        <!-- Las secciones por zona se inyectan dinámicamente desde app.js -->
       </div>
 
       <!-- Pie de página con timestamp de última actualización -->

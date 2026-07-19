@@ -12,6 +12,15 @@ export enum EstadoTicket {
   ANULADO = 'anulado',
 }
 
+// Plan de tarifa elegido al crear el ticket (ver tarifas.ts para los montos
+// y la lógica de cobro de cada uno). Es fijo desde la creación: no se puede
+// cambiar el plan a mitad de la estadía vía el PATCH genérico.
+export enum TipoTarifa {
+  MENSUAL = 'MENSUAL',
+  POR_HORA = 'POR_HORA',
+  NOCTURNO = 'NOCTURNO',
+}
+
 @Entity('tickets')
 export class Ticket {
   @PrimaryGeneratedColumn('uuid')
@@ -41,6 +50,13 @@ export class Ticket {
     default: EstadoTicket.ACTIVO,
   })
   estado_ticket!: EstadoTicket;
+
+  @Column({
+    type: 'enum',
+    enum: TipoTarifa,
+    default: TipoTarifa.POR_HORA,
+  })
+  tipo_tarifa!: TipoTarifa;
 
   @Column({ type: 'uuid', nullable: true })
   id_empleado!: string; // empleado que registra la sesión

@@ -294,6 +294,8 @@ Content-Type: {{contentType}}
 # Copia "idEspacio" -> variable "espacioId"
 
 ### 17. Crear ticket base
+# fecha_hora_ingreso ya no se manda: el servidor la captura sola (ver
+# TicketsService.createTicket).
 # @name crearTicket
 POST {{baseUrlTickets}}/tickets
 Content-Type: {{contentType}}
@@ -303,7 +305,7 @@ Content-Type: {{contentType}}
   "id_espacio": "{{espacioId}}",
   "id_vehiculo": "{{vehiculoPlaca}}",
   "tipo_vehiculo": "Auto",
-  "fecha_hora_ingreso": "2026-07-08T01:00:00.000Z"
+  "tipo_tarifa": "POR_HORA"
 }
 
 # Copia "id_ticket" -> variable "ticketId"

@@ -1,0 +1,355 @@
+\documentclass[12pt,letterpaper]{article}
+
+% ============================================================
+% PAQUETES
+% ============================================================
+\usepackage[spanish,es-tabla]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage{setspace}
+
+\decimalpoint
+
+% ============================================================
+% CONFIGURACIÓN DE CÓDIGO FUENTE
+% ============================================================
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codekw}{RGB}{0,0,180}
+\definecolor{codecom}{RGB}{110,110,110}
+\definecolor{codestr}{RGB}{0,120,90}
+
+% Esta instalación de listings no trae TypeScript ni JavaScript como
+% lenguaje base, así que se define desde cero (no como variante de otro).
+\lstdefinelanguage{TypeScript}{
+  keywords={const,let,var,readonly,interface,type,enum,implements,private,
+    public,protected,extends,class,async,await,export,import,from,as,
+    namespace,declare,void,any,never,this,super,new,typeof,instanceof,in,
+    of,static,get,set,return,if,else,for,while,switch,case,break,continue,
+    default,try,catch,finally,throw,function,null,undefined,true,false},
+  keywordstyle=\color{codekw}\bfseries,
+  ndkeywords={string,number,boolean,object},
+  ndkeywordstyle=\color{codekw!70!black},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  string=[b]',
+  morestring=[b]",
+  morestring=[b]`
+}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{black!30},
+  numbers=left,
+  numberstyle=\tiny\color{black!50},
+  numbersep=6pt,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecom}\itshape,
+  stringstyle=\color{codestr},
+  showstringspaces=false,
+  backgroundcolor=\color{codebg},
+  tabsize=2,
+  captionpos=b,
+  columns=flexible
+}
+\lstset{style=code}
+
+% ============================================================
+% ENCABEZADO Y PIE DE PÁGINA
+% ============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Universidad de las Fuerzas Armadas ESPE}
+\fancyhead[R]{\small Laboratorio 3.1 -- Microservicio Audit}
+\fancyfoot[C]{\small\thepage}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue,
+  pdftitle={Laboratorio 3.1: Sistema de Parqueadero -- Microservicio Audit},
+  pdfauthor={Cáceres Villagómez Germán Patricio}
+}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\onehalfspacing
+
+% ============================================================
+% DOCUMENTO
+% ============================================================
+\begin{document}
+
+% ------------------------------------------------------------
+% PORTADA
+% ------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{1cm}
+
+  {\large\bfseries UNIVERSIDAD DE LAS FUERZAS ARMADAS ESPE\par}
+  \vspace{0.3cm}
+  {\normalsize Departamento de Ciencias de la Computación\par}
+
+  \vspace{2.5cm}
+
+  \rule{\linewidth}{0.4pt}
+  \vspace{0.4cm}
+  {\Large\bfseries Laboratorio 3.1\par}
+  \vspace{0.2cm}
+  {\Large\bfseries Sistema de Parqueadero -- Microservicio Audit\par}
+  \vspace{0.4cm}
+  \rule{\linewidth}{0.4pt}
+
+  \vspace{2.5cm}
+
+  \begin{tabular}{rl}
+    \textbf{Autor:} & Cáceres Villagómez Germán Patricio \\[0.3em]
+    \textbf{NRC:} & 30731 -- Aplicaciones Distribuidas \\[0.3em]
+    \textbf{Docente:} & Ing. Ángel Cudco, Mgs. \\[0.3em]
+    \textbf{Fecha:} & 19 de julio de 2026 \\
+  \end{tabular}
+
+  \vfill
+
+  {\small Sangolquí -- Ecuador\par}
+  \vspace{0.3cm}
+\end{titlepage}
+
+% ------------------------------------------------------------
+% TABLA DE CONTENIDO
+% ------------------------------------------------------------
+\tableofcontents
+\newpage
+
+% ------------------------------------------------------------
+% RESUMEN
+% ------------------------------------------------------------
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+
+El presente informe documenta el análisis, la implementación y la verificación del microservicio \texttt{ms-audit}, componente responsable de la trazabilidad y auditoría dentro del sistema distribuido \emph{Parqueadero Inteligente}, una plataforma de gestión de estacionamientos construida bajo una arquitectura de microservicios. \texttt{ms-audit} centraliza el registro de las operaciones críticas (creación, actualización, eliminación e inicio de sesión) que ocurren en los demás microservicios del sistema (\texttt{personas}, \texttt{vehiculos}, \texttt{zonas}, \texttt{ms-tickets} y \texttt{asignacion-trazabilidad}), recibiéndolas de forma asíncrona a través del bróker de mensajería RabbitMQ, sin acoplarse directamente a ninguno de ellos. Se describe su arquitectura interna basada en NestJS y TypeORM, el patrón productor-consumidor implementado mediante un exchange de tipo \emph{topic}, el esquema de validación estricto de los eventos recibidos, y el mecanismo de seguridad basado en JSON Web Tokens (JWT) y control de acceso por roles que restringe la consulta de los registros de auditoría exclusivamente al personal administrativo. Como parte del desarrollo práctico se identificó y corrigió una falla de autorización en la que el guardián de roles no evaluaba correctamente los metadatos declarados a nivel de clase, permitiendo que un usuario sin privilegios accediera a información sensible; su corrección y verificación se documentan como parte de los resultados obtenidos.
+
+\newpage
+
+% ------------------------------------------------------------
+% INTRODUCCIÓN
+% ------------------------------------------------------------
+\section{Introducción}
+
+Los sistemas distribuidos construidos bajo el paradigma de microservicios dividen la lógica de negocio en unidades pequeñas, independientes y desplegables por separado, cada una con su propia base de datos y ciclo de vida. Esta independencia, si bien favorece la escalabilidad y el mantenimiento del software, introduce un problema recurrente: la dificultad de reconstruir, después de ocurrido un incidente, una línea de tiempo coherente de \emph{qué} sucedió, \emph{quién} lo hizo, \emph{desde dónde} y \emph{cuándo}, cuando la información relevante está dispersa entre varios servicios que no comparten una base de datos común.
+
+El proyecto \emph{Parqueadero Inteligente}, desarrollado como práctica del curso de Aplicaciones Distribuidas, implementa un sistema de gestión de estacionamientos compuesto por seis microservicios (\texttt{personas}, \texttt{vehiculos}, \texttt{zonas}, \texttt{ms-tickets}, \texttt{asignacion-trazabilidad} y \texttt{ms-audit}), un API Gateway (Kong) que centraliza el enrutamiento hacia ellos, y un bróker de mensajería (RabbitMQ) que habilita comunicación asíncrona entre servicios. Ante la necesidad de contar con un registro de auditoría fiable, íntegro y desacoplado del resto del sistema, se diseñó \texttt{ms-audit} como el único responsable de persistir el historial de acciones relevantes ocurridas en cualquier otro microservicio, recibiéndolas mediante mensajes publicados en una cola de RabbitMQ en lugar de exponer una API que cada servicio deba invocar de forma síncrona.
+
+Este informe describe en detalle la arquitectura, el flujo de datos y las decisiones de diseño de \texttt{ms-audit}, así como el trabajo de aseguramiento realizado sobre sus endpoints HTTP de consulta, dado que la información de auditoría --~nombres de usuario, direcciones IP, direcciones MAC y el detalle completo de cada operación~-- constituye en sí misma un activo sensible que requiere protección.
+
+% ------------------------------------------------------------
+% OBJETIVOS
+% ------------------------------------------------------------
+\section{Objetivos}
+
+\subsection*{Objetivo General}
+\addcontentsline{toc}{subsection}{Objetivo General}
+
+Analizar, implementar y verificar el microservicio \texttt{ms-audit} como componente de trazabilidad del sistema distribuido \emph{Parqueadero Inteligente}, describiendo su arquitectura orientada a eventos, su mecanismo de comunicación asíncrona mediante RabbitMQ y el esquema de seguridad que protege el acceso a la información de auditoría.
+
+\subsection*{Objetivos Específicos}
+\addcontentsline{toc}{subsection}{Objetivos Específicos}
+
+\begin{enumerate}[label=\arabic*.]
+  \item Describir la arquitectura interna de \texttt{ms-audit} (módulos, entidad de persistencia, esquema de validación de datos y consumidor de RabbitMQ), así como el patrón productor-consumidor que emplea para comunicarse de forma desacoplada con el resto de los microservicios del sistema.
+  \item Implementar y analizar el mecanismo de autenticación basado en JSON Web Tokens y de autorización basada en roles que restringe el acceso a los endpoints HTTP de auditoría exclusivamente a los usuarios con rol \texttt{admin} o \texttt{root}, dado el carácter sensible de la información que gestiona el servicio.
+  \item Verificar, mediante pruebas funcionales con peticiones HTTP autenticadas y no autenticadas, el correcto funcionamiento del microservicio dentro del flujo de eventos del sistema y la efectividad de los controles de seguridad implementados.
+\end{enumerate}
+
+\newpage
+
+% ------------------------------------------------------------
+% DESARROLLO
+% ------------------------------------------------------------
+\section{Desarrollo}
+
+\subsection{Arquitectura general del sistema}
+
+El sistema \emph{Parqueadero Inteligente} sigue una arquitectura de microservicios desplegada mediante contenedores Docker orquestados con Docker Compose. Cada microservicio posee su propia base de datos PostgreSQL (aunque todas residen en una misma instancia del motor de base de datos, cada una en un esquema independiente: \texttt{personas\_db}, \texttt{vehiculos\_db}, \texttt{zonas\_db}, \texttt{tickets\_db}, \texttt{asignacion\_db} y \texttt{audit\_db}), y todo el tráfico externo hacia los servicios pasa a través de Kong, el cual centraliza políticas transversales como CORS y limitación de tasa (\emph{rate limiting}).
+
+La comunicación entre microservicios ocurre de dos formas: síncrona, mediante peticiones HTTP directas (por ejemplo, cuando \texttt{ms-tickets} consulta el estado de un espacio en \texttt{zonas}), y asíncrona, mediante RabbitMQ, empleada exclusivamente para el flujo de auditoría. \texttt{ms-audit} es, en este sentido, un \emph{consumidor puro}: no expone ninguna funcionalidad de negocio, y su única responsabilidad es recibir, validar y persistir los eventos que los demás servicios publican.
+
+\subsection{Patrón productor-consumidor con RabbitMQ}
+
+Cada uno de los microservicios que modifica datos de negocio (\texttt{personas}, \texttt{vehiculos}, \texttt{zonas}, \texttt{ms-tickets}, \texttt{asignacion-trazabilidad}) incorpora una clase \texttt{EventPublisher} que, tras cada operación relevante (creación, actualización, eliminación o inicio de sesión), construye un objeto \texttt{AuditEvent} y lo publica en un \emph{exchange} de tipo \texttt{topic} llamado \texttt{audit\_exchange}, usando la clave de enrutamiento \texttt{audit.event}. El publicador declara el \emph{exchange} como durable pero no declara ninguna cola: esa responsabilidad recae exclusivamente en el consumidor.
+
+\begin{lstlisting}[language=TypeScript,caption={Publicación de un evento de auditoría (event-publisher.service.ts, común a los microservicios productores)}]
+async publish(event: AuditEvent): Promise<void> {
+  const mac = event.mac ?? this.getLocalMacAddress();
+  await this.channel.assertExchange(this.exchange, 'topic', { durable: true });
+  this.channel.publish(
+    this.exchange,
+    this.routingKey,
+    Buffer.from(JSON.stringify({ ...event, mac })),
+    { persistent: true },
+  );
+}
+\end{lstlisting}
+
+Del lado de \texttt{ms-audit}, la clase \texttt{AuditConsumer} implementa los ganchos de ciclo de vida \texttt{OnModuleInit} y \texttt{OnModuleDestroy} de NestJS. Al iniciar, declara el mismo \emph{exchange}, declara una cola durable \texttt{audit\_queue} y la enlaza (\emph{bind}) al \emph{exchange} mediante la clave \texttt{audit.event}. Por cada mensaje recibido, el contenido JSON se transforma a una instancia de \texttt{CreateAuditEventDto} y se valida con \texttt{class-validator}; si la validación falla, el mensaje se rechaza de forma permanente (\texttt{nack} sin reencolar) para evitar ciclos infinitos de reintento; si es válido, se persiste mediante \texttt{AuditService} y se confirma (\texttt{ack}).
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.85\linewidth]{img/rabbitInterface.png}
+  \caption{Panel de administración de RabbitMQ mostrando la cola \texttt{audit\_queue}, de tipo \emph{classic} y durable (columna \emph{Features}: D), en estado \emph{running}.}
+  \label{fig:rabbitmq-queue}
+\end{figure}
+
+Como se observa en la Figura \ref{fig:rabbitmq-queue}, la cola \texttt{audit\_queue} queda registrada y operativa en el bróker una vez que \texttt{ms-audit} se inicia, lista para recibir los mensajes enlazados desde \texttt{audit\_exchange}.
+
+\begin{lstlisting}[language=TypeScript,caption={Validación y persistencia de un mensaje entrante (audit.consumer.ts)}]
+const evento = plainToInstance(CreateAuditEventDto, JSON.parse(msg.content.toString()));
+const errores = await validate(evento);
+
+if (errores.length > 0) {
+  this.channel.nack(msg, false, false); // descarta, no reencola
+  return;
+}
+
+await this.auditService.create(evento);
+this.channel.ack(msg);
+\end{lstlisting}
+
+Adicionalmente, tanto el publicador como el consumidor implementan una estrategia de reconexión automática: si la conexión con RabbitMQ se pierde o falla al establecerse, se programa un nuevo intento cada 5 segundos, de modo que una caída temporal del bróker no requiera reiniciar manualmente los microservicios involucrados.
+
+\subsection{Esquema de datos y validación}
+
+La entidad \texttt{EventoAuditoria}, mapeada a la tabla \texttt{eventos\_auditoria} mediante TypeORM, almacena: un identificador UUID, el nombre del servicio de origen (\texttt{servicio}), la acción realizada (\texttt{action}), la entidad de negocio afectada (\texttt{entidad}), un campo JSON con el detalle de los datos (\texttt{datos}), el nombre de usuario y rol de quien ejecutó la acción (cuando la petición vino autenticada), la dirección IP, la dirección MAC, y una marca de tiempo generada automáticamente.
+
+El DTO de entrada (\texttt{CreateAuditEventDto}) aplica validaciones estrictas mediante expresiones regulares y enumeraciones cerradas: el campo \texttt{servicio} debe iniciar con el prefijo \texttt{ms-}; \texttt{accion} debe pertenecer al conjunto \{\texttt{CREATE}, \texttt{UPDATE}, \texttt{DELETE}, \texttt{LOGIN}, \texttt{LOGOUT}, \texttt{SELECT}\}; \texttt{entidad} solo admite letras mayúsculas y guiones; la dirección IP debe ser una IPv4 válida (\texttt{@IsIP('4')}) y la dirección MAC debe superar la validación de \texttt{@IsMACAddress}. Este nivel de validación evita que datos malformados o incompletos lleguen a persistirse, actuando como una segunda barrera de calidad además de la que ya aplican los microservicios productores sobre sus propios datos de negocio.
+
+\subsection{Seguridad: autenticación y autorización}
+
+A diferencia de otros microservicios del sistema --~que exponen algunos endpoints de lectura pública, por ejemplo la consulta de espacios disponibles para el dashboard del cliente~--, \texttt{ms-audit} no posee ninguna ruta abierta. Esta decisión de diseño responde a que los registros de auditoría exponen información potencialmente sensible (identidad de los usuarios, direcciones IP y MAC, y el detalle completo de cada operación realizada en el sistema), por lo que su acceso debe limitarse estrictamente al personal con funciones administrativas.
+
+El controlador \texttt{AuditController} aplica, a nivel de toda la clase, un guardián de autenticación (\texttt{JwtAuthGuard}) que exige un token JWT válido en el encabezado \texttt{Authorization}, y un guardián de autorización (\texttt{RolesGuard}) que exige que el token contenga el rol \texttt{admin} o \texttt{root}:
+
+\begin{lstlisting}[language=TypeScript,caption={Restricción de acceso a nivel de clase (audit.controller.ts)}]
+const AUDIT_ROLES = ['admin', 'root'];
+
+@Controller('audit')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...AUDIT_ROLES)
+export class AuditController {
+  @Post()  create(...) { ... }
+  @Get()   findAll(...) { ... }
+  @Get(':id') findOne(...) { ... }
+}
+\end{lstlisting}
+
+Durante la fase de verificación se detectó que, si bien el decorador \texttt{@Roles()} estaba correctamente declarado a nivel de clase, el guardián \texttt{RolesGuard} obtenía los metadatos de roles requeridos únicamente a través de \texttt{reflector.get('roles', context.getHandler())}, método que solo inspecciona el \emph{método} HTTP invocado y no la \emph{clase} que lo contiene. Como consecuencia, el guardián nunca encontraba la restricción declarada y se comportaba como si ningún rol fuera requerido, permitiendo que cualquier usuario autenticado --~sin importar su rol~-- accediera a los registros de auditoría. La corrección consistió en emplear \texttt{reflector.getAllAndOverride}, que revisa primero el método y, de no encontrar metadatos ahí, recurre a la clase:
+
+\begin{lstlisting}[language=TypeScript,caption={Corrección del guardián de roles (roles.guard.ts)}]
+const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
+  context.getHandler(),
+  context.getClass(),
+]);
+\end{lstlisting}
+
+Esta corrección se aplicó de forma preventiva también en los guardianes equivalentes de los demás microservicios, aun cuando en ellos el decorador se usaba correctamente a nivel de método, con el fin de blindar el sistema completo frente a la misma clase de error si en el futuro se declarara un \texttt{@Roles()} a nivel de clase en cualquiera de ellos.
+
+\subsection{Configuración de despliegue y enrutamiento}
+
+\texttt{ms-audit} se despliega como un contenedor independiente (\texttt{ms-audit-app}) escuchando en el puerto 3004, con las variables de entorno necesarias para conectarse a su base de datos PostgreSQL (\texttt{audit\_db}) y al bróker RabbitMQ, además de un secreto compartido de JWT (\texttt{JWT\_SECRET}) idéntico al utilizado por el microservicio \texttt{personas}, que es quien emite los tokens al iniciar sesión. El API Gateway Kong registra una ruta \texttt{/audit} hacia este servicio, con la política de CORS habilitada para permitir su consumo desde el dashboard web, quedando accesible externamente en \texttt{http://localhost:8000/audit}.
+
+\subsection{Verificación funcional}
+
+Se realizaron las siguientes pruebas para verificar el correcto funcionamiento del microservicio y de sus controles de seguridad:
+
+\begin{itemize}
+  \item \textbf{Flujo asíncrono automático:} al ejecutar operaciones de creación, actualización o inicio de sesión en cualquiera de los microservicios productores, se verificó que el evento correspondiente aparecía persistido en \texttt{ms-audit} sin intervención manual, confirmando el correcto funcionamiento del canal RabbitMQ.
+  \item \textbf{Acceso sin token:} una petición \texttt{GET /audit} sin encabezado \texttt{Authorization} devolvió \texttt{401 Unauthorized}.
+  \item \textbf{Acceso con rol insuficiente:} una petición \texttt{GET /audit} con un token válido de un usuario con rol \texttt{cliente} devolvió \texttt{403 Forbidden}, confirmando la corrección del guardián de roles descrita en la sección anterior.
+  \item \textbf{Acceso autorizado:} la misma petición, empleando un token de un usuario con rol \texttt{admin}, devolvió \texttt{200 OK} junto con el listado completo de eventos registrados.
+\end{itemize}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\linewidth]{img/requestAudit.png}
+  \caption{Ejecución del flujo de \texttt{audit-request.http} (login como administrador seguido de \texttt{GET /audit}) desde el cliente REST de Visual Studio Code. La respuesta muestra el código \texttt{200 OK}, los encabezados de limitación de tasa (\texttt{X-RateLimit-*}) aplicados por \texttt{ThrottlerModule}, y el primer evento de auditoría del listado, correspondiente a un inicio de sesión.}
+  \label{fig:request-audit}
+\end{figure}
+
+La Figura \ref{fig:request-audit} evidencia, además de la respuesta autorizada, dos aspectos adicionales de la implementación: la limitación de tasa configurada mediante \texttt{THROTTLE\_TTL} y \texttt{THROTTLE\_LIMIT} (visible en los encabezados \texttt{X-RateLimit-Limit} y \texttt{X-RateLimit-Remaining}), y la estructura real de un evento persistido, con su identificador UUID, el servicio de origen, la acción registrada y los metadatos de identidad (usuario, rol, IP y MAC) capturados automáticamente por el sistema.
+
+Estas pruebas confirman que \texttt{ms-audit} cumple su doble propósito: registrar de forma confiable y desacoplada toda actividad relevante del sistema, y restringir el acceso a esa información únicamente al personal autorizado.
+
+\newpage
+
+% ------------------------------------------------------------
+% CONCLUSIONES
+% ------------------------------------------------------------
+\section{Conclusiones}
+
+\begin{itemize}
+  \item La arquitectura orientada a eventos, implementada mediante un exchange de tipo \emph{topic} en RabbitMQ, permite que \texttt{ms-audit} registre la actividad de los demás microservicios sin que estos conozcan su existencia ni dependan de su disponibilidad, logrando un desacoplamiento real entre los productores de eventos y su consumidor.
+  \item La estrategia de reconexión automática implementada tanto en el publicador como en el consumidor otorga resiliencia al sistema frente a caídas temporales del bróker de mensajería, evitando la pérdida de eventos y la necesidad de reinicios manuales.
+  \item La validación estricta de los eventos entrantes mediante \texttt{class-validator}, junto con el rechazo permanente de mensajes malformados, protege la integridad de los datos de auditoría frente a productores mal configurados.
+  \item La protección de los endpoints de auditoría mediante autenticación JWT y autorización basada en roles es indispensable dado el carácter sensible de la información gestionada; su ausencia habría expuesto identidades, direcciones IP y el historial completo de operaciones del sistema a cualquier usuario autenticado.
+  \item El hallazgo y la corrección del error en la evaluación de metadatos a nivel de clase en \texttt{RolesGuard} evidencian la importancia de verificar de forma explícita, mediante pruebas funcionales reales con distintos roles, que los controles de seguridad declarados en el código efectivamente se apliquen en tiempo de ejecución.
+\end{itemize}
+
+% ------------------------------------------------------------
+% RECOMENDACIONES
+% ------------------------------------------------------------
+\section{Recomendaciones}
+
+\begin{itemize}
+  \item Incorporar pruebas automatizadas de integración que ejecuten, en cada cambio de código, los mismos escenarios de autorización verificados manualmente (sin token, con rol insuficiente, con rol autorizado), de modo que una regresión como la detectada en \texttt{RolesGuard} sea detectada antes de llegar a un entorno productivo.
+  \item Implementar mecanismos de monitoreo sobre la profundidad de la cola \texttt{audit\_queue} y sobre la tasa de mensajes rechazados (\texttt{nack}), que permitan detectar tempranamente productores mal configurados o una eventual saturación del consumidor.
+  \item Definir una política de retención y posible archivado en frío de los registros de auditoría, dado que se trata de una tabla de solo inserción cuyo crecimiento es indefinido en el tiempo.
+  \item Evaluar la incorporación de mecanismos de integridad (por ejemplo, encadenamiento criptográfico de eventos o firmas digitales) que permitan detectar si un registro de auditoría fue alterado después de su creación, elevando el nivel de garantía que ofrece el sistema ante una auditoría externa.
+  \item Añadir paginación a la consulta \texttt{GET /audit}, actualmente diseñada para devolver la totalidad de los registros, con el fin de mantener un rendimiento aceptable a medida que el volumen histórico de eventos crezca.
+\end{itemize}
+
+\newpage
+
+% ------------------------------------------------------------
+% BIBLIOGRAFÍA
+% ------------------------------------------------------------
+\begin{thebibliography}{9}
+\addcontentsline{toc}{section}{Bibliografía}
+
+\bibitem{nestjs}
+NestJS. (2024). \emph{NestJS -- A progressive Node.js framework}. Documentación oficial. \url{https://docs.nestjs.com}
+
+\bibitem{rabbitmq}
+RabbitMQ. (2024). \emph{RabbitMQ tutorials -- Work queues, topics and reliability}. Documentación oficial de VMware/Broadcom. \url{https://www.rabbitmq.com/tutorials}
+
+\bibitem{newman}
+Newman, S. (2021). \emph{Building Microservices: Designing Fine-Grained Systems} (2.\textsuperscript{a} ed.). O'Reilly Media.
+
+\bibitem{owasp}
+OWASP Foundation. (2023). \emph{Logging Cheat Sheet}. OWASP Cheat Sheet Series. \url{https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html}
+
+\bibitem{jwt}
+Jones, M., Bradley, J., y Sakimura, N. (2015). \emph{RFC 7519: JSON Web Token (JWT)}. Internet Engineering Task Force (IETF). \url{https://www.rfc-editor.org/rfc/rfc7519}
+
+\end{thebibliography}
+
+\end{document}

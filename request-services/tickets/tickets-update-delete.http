@@ -6,8 +6,9 @@
 # ya fue cerrado (salida/anulado) en una corrida previa, crea uno nuevo primero
 # en request-services/asignar-tickets/ y actualiza la variable ticketId.
 #
-# Actualizar/anular/eliminar un ticket (y registrar salida) exige un token con
-# rol admin, root o recaudador (crear un ticket sigue abierto también a cliente).
+# Crear/actualizar/anular/eliminar/registrar salida de un ticket exige un
+# token con rol admin, root o recaudador (staff-only; un cliente solo puede
+# leer sus propios tickets, ver asignar-tickets/clientes.http).
 
 ### 0. Login como admin
 # @name login
@@ -20,23 +21,23 @@ Content-Type: {{contentType}}
 }
 
 ### 1. Actualizar ticket (usa la variable compartida ticketId/espacioId)
+# fecha_hora_ingreso ya no se puede mandar aquí (ni en la creación): el
+# servidor la captura sola al crear el ticket (ver TicketsService.createTicket)
+# y ya no se puede alterar después, por la misma razón que fecha_hora_salida
+# y tipo_tarifa -- afecta directamente las horas/fracción cobradas.
 PATCH {{baseUrl}}/tickets/{{ticketId}}
 Content-Type: {{contentType}}
 Authorization: Bearer {{login.response.body.$.access_token}}
 
 {
-  "id_espacio": "{{espacioId}}",
-  "fecha_hora_ingreso": "2026-07-06T10:30:00.000Z"
+  "id_espacio": "{{espacioId}}"
 }
 
 ### 2. Registrar salida de ticket
+# fecha_hora_salida ya no se manda: el servidor la captura sola con su hora
+# real al procesar la salida (ver TicketsService.registrarSalida).
 PATCH {{baseUrl}}/tickets/{{ticketId}}/salida
-Content-Type: {{contentType}}
 Authorization: Bearer {{login.response.body.$.access_token}}
-
-{
-  "fecha_salida": "2026-07-06T13:00:00.000Z"
-}
 
 ### 3. Anular ticket
 PATCH {{baseUrl}}/tickets/{{ticketId}}/anular

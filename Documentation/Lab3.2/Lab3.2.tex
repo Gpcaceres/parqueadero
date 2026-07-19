@@ -1,0 +1,424 @@
+\documentclass[12pt,letterpaper]{article}
+
+% ============================================================
+% PAQUETES
+% ============================================================
+\usepackage[spanish,es-tabla]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage{setspace}
+
+\decimalpoint
+
+% ============================================================
+% CONFIGURACIÓN DE CÓDIGO FUENTE
+% ============================================================
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codekw}{RGB}{0,0,180}
+\definecolor{codecom}{RGB}{110,110,110}
+\definecolor{codestr}{RGB}{0,120,90}
+
+% Esta instalación de listings no trae TypeScript ni JavaScript como
+% lenguaje base, así que se definen desde cero (no como variantes de otro).
+\lstdefinelanguage{TypeScript}{
+  keywords={const,let,var,readonly,interface,type,enum,implements,private,
+    public,protected,extends,class,async,await,export,import,from,as,
+    namespace,declare,void,any,never,this,super,new,typeof,instanceof,in,
+    of,static,get,set,return,if,else,for,while,switch,case,break,continue,
+    default,try,catch,finally,throw,function,null,undefined,true,false},
+  keywordstyle=\color{codekw}\bfseries,
+  ndkeywords={string,number,boolean,object},
+  ndkeywordstyle=\color{codekw!70!black},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  string=[b]',
+  morestring=[b]",
+  morestring=[b]`
+}
+
+\lstdefinelanguage{JavaScriptDoc}{
+  keywords={const,let,var,function,return,if,else,for,while,new,this,
+    typeof,in,of,async,await,try,catch,null,undefined,true,false},
+  keywordstyle=\color{codekw}\bfseries,
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  string=[b]',
+  morestring=[b]",
+  morestring=[b]`
+}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{black!30},
+  numbers=left,
+  numberstyle=\tiny\color{black!50},
+  numbersep=6pt,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecom}\itshape,
+  stringstyle=\color{codestr},
+  showstringspaces=false,
+  backgroundcolor=\color{codebg},
+  tabsize=2,
+  captionpos=b,
+  columns=flexible
+}
+\lstset{style=code}
+
+% ============================================================
+% ENCABEZADO Y PIE DE PÁGINA
+% ============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Universidad de las Fuerzas Armadas ESPE}
+\fancyhead[R]{\small Laboratorio 3.2 -- SSE en ms-tickets}
+\fancyfoot[C]{\small\thepage}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue,
+  pdftitle={Laboratorio 3.2: Sistema de Parqueadero -- Configuracion SSE en ms-tickets},
+  pdfauthor={Cáceres Villagómez Germán Patricio}
+}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\onehalfspacing
+
+% ============================================================
+% DOCUMENTO
+% ============================================================
+\begin{document}
+
+% ------------------------------------------------------------
+% PORTADA
+% ------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{1cm}
+
+  {\large\bfseries UNIVERSIDAD DE LAS FUERZAS ARMADAS ESPE\par}
+  \vspace{0.3cm}
+  {\normalsize Departamento de Ciencias de la Computación\par}
+
+  \vspace{2.5cm}
+
+  \rule{\linewidth}{0.4pt}
+  \vspace{0.4cm}
+  {\Large\bfseries Laboratorio 3.2\par}
+  \vspace{0.2cm}
+  {\Large\bfseries Sistema de Parqueadero -- Configuración de Server-Sent Events (SSE) en ms-tickets\par}
+  \vspace{0.4cm}
+  \rule{\linewidth}{0.4pt}
+
+  \vspace{2.5cm}
+
+  \begin{tabular}{rl}
+    \textbf{Autor:} & Cáceres Villagómez Germán Patricio \\[0.3em]
+    \textbf{NRC:} & 30731 -- Aplicaciones Distribuidas \\[0.3em]
+    \textbf{Docente:} & Ing. Ángel Cudco, Mgs. \\[0.3em]
+    \textbf{Fecha:} & 19 de julio de 2026 \\
+  \end{tabular}
+
+  \vfill
+
+  {\small Sangolquí -- Ecuador\par}
+  \vspace{0.3cm}
+\end{titlepage}
+
+% ------------------------------------------------------------
+% TABLA DE CONTENIDO
+% ------------------------------------------------------------
+\tableofcontents
+\newpage
+
+% ------------------------------------------------------------
+% RESUMEN
+% ------------------------------------------------------------
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+
+El presente informe documenta la configuración e implementación de un canal de comunicación en tiempo real basado en \emph{Server-Sent Events} (SSE) dentro del microservicio \texttt{ms-tickets}, componente del sistema distribuido \emph{Parqueadero Inteligente}. Este mecanismo permite que el \emph{dashboard} del cliente refleje, sin necesidad de recargar la página, los cambios de estado de los espacios de estacionamiento (disponible, ocupado, reservado, en mantenimiento o inactivo) en el instante en que ocurren, como consecuencia del ciclo de vida de un ticket de estacionamiento. Se describe el patrón interno de publicación-suscripción implementado con RxJS, la integración entre \texttt{ms-tickets} y el microservicio \texttt{zonas} para sincronizar el estado real de cada espacio, la solución adoptada para autenticar dicha comunicación interna una vez que se incorporó seguridad basada en roles al sistema, y la configuración particular que debió aplicarse en el API Gateway (Kong) para permitir el paso de un flujo SSE sin que su comportamiento de \emph{buffering} por defecto interrumpiera la transmisión. El informe cierra con la verificación funcional del flujo completo: creación y cierre de un ticket, actualización del espacio correspondiente, emisión del evento y recepción en el cliente conectado.
+
+\newpage
+
+% ------------------------------------------------------------
+% INTRODUCCIÓN
+% ------------------------------------------------------------
+\section{Introducción}
+
+En un sistema de gestión de estacionamientos, la disponibilidad de los espacios es un dato que cambia con alta frecuencia y cuya vigencia es crítica: un panel de monitoreo que muestre información desactualizada puede llevar a un usuario o a un operador a asumir que un espacio está libre cuando en realidad ya fue ocupado segundos antes. La forma tradicional de mantener actualizada una interfaz web ante estos cambios es el \emph{polling}, es decir, que el cliente consulte periódicamente al servidor si hay novedades; sin embargo, esta técnica introduce una latencia igual al intervalo de consulta y genera tráfico innecesario cuando no hay cambios que reportar.
+
+\emph{Server-Sent Events} (SSE) es un estándar del World Wide Web Consortium que permite a un servidor mantener abierta una única conexión HTTP y enviar, a través de ella, actualizaciones al cliente en el momento en que se producen, sin que este deba solicitarlas repetidamente. A diferencia de WebSockets, que habilita comunicación bidireccional, SSE está diseñado específicamente para el caso --~mucho más común en aplicaciones de monitoreo~-- en que solo el servidor necesita empujar información hacia el cliente.
+
+En el sistema \emph{Parqueadero Inteligente}, el microservicio \texttt{ms-tickets} es responsable de gestionar el ciclo de vida de los tickets de estacionamiento (ingreso, actualización, salida y anulación), y cada una de estas operaciones provoca, como efecto colateral, un cambio en el estado del espacio asociado dentro del microservicio \texttt{zonas} (por ejemplo, de \texttt{DISPONIBLE} a \texttt{OCUPADO} al crear un ticket). Este informe documenta cómo dicho cambio de estado se propaga en tiempo real hacia el \emph{dashboard} web mediante SSE, y los ajustes de seguridad y de infraestructura que fue necesario realizar para que ese flujo funcionara de manera confiable una vez que se reforzaron los controles de acceso del sistema.
+
+% ------------------------------------------------------------
+% OBJETIVOS
+% ------------------------------------------------------------
+\section{Objetivos}
+
+\subsection*{Objetivo General}
+\addcontentsline{toc}{subsection}{Objetivo General}
+
+Implementar y documentar la configuración de comunicación en tiempo real mediante \emph{Server-Sent Events} en el microservicio \texttt{ms-tickets}, de manera que los cambios de estado de los espacios de estacionamiento se reflejen instantáneamente en el \emph{dashboard} del sistema \emph{Parqueadero Inteligente}.
+
+\subsection*{Objetivos Específicos}
+\addcontentsline{toc}{subsection}{Objetivos Específicos}
+
+\begin{enumerate}[label=\arabic*.]
+  \item Describir el patrón de publicación-suscripción interno, basado en un \texttt{Subject} de RxJS, que emplea \texttt{ms-tickets} para emitir eventos SSE hacia los clientes conectados al endpoint \texttt{/sse/espacios}.
+  \item Configurar la integración entre el ciclo de vida de un ticket (creación y cierre) y la actualización del estado del espacio correspondiente en el microservicio \texttt{zonas}, incorporando la autenticación de servicio a servicio requerida tras la incorporación de seguridad basada en roles a dicho microservicio.
+  \item Adaptar la configuración del \emph{API Gateway} Kong para permitir el paso de un flujo SSE sin que el comportamiento de \emph{buffering} por defecto lo interrumpa, y verificar la recepción en tiempo real de los eventos emitidos en el \emph{dashboard} cliente.
+\end{enumerate}
+
+\newpage
+
+% ------------------------------------------------------------
+% DESARROLLO
+% ------------------------------------------------------------
+\section{Desarrollo}
+
+\subsection{Fundamento: Server-Sent Events}
+
+SSE es un mecanismo definido dentro del estándar HTML por el WHATWG que permite a un servidor enviar eventos de texto a un cliente a través de una única conexión HTTP persistente, usando el tipo de contenido \texttt{text/event-stream}. Del lado del navegador, la interfaz \texttt{EventSource} de JavaScript se encarga de abrir la conexión, interpretar cada bloque de datos recibido y reintentar automáticamente la conexión en caso de corte, sin que la aplicación deba implementar dicha lógica manualmente. A diferencia de WebSockets, SSE utiliza HTTP estándar (lo que simplifica su paso a través de \emph{proxies} y balanceadores) y es unidireccional: únicamente el servidor envía datos, característica suficiente para el caso de uso de este sistema, donde el cliente solo necesita \emph{recibir} actualizaciones del estado de los espacios.
+
+\subsection{Módulo SSE en ms-tickets}
+
+Dentro de \texttt{ms-tickets} se implementó un módulo dedicado (\texttt{SseModule}) compuesto por un servicio y un controlador. El servicio (\texttt{SseService}) encapsula un \texttt{Subject} de RxJS, que actúa como el canal interno de publicación-suscripción: cualquier parte de la aplicación puede invocar \texttt{emitEvent(tipo, datos)} para publicar un evento, y el controlador se suscribe a ese mismo flujo para reenviarlo a los clientes HTTP conectados.
+
+\begin{lstlisting}[language=TypeScript,caption={Servicio SSE basado en un Subject de RxJS (sse.service.ts)}]
+export interface SseEvent {
+  type: string;
+  data: any;
+}
+
+@Injectable()
+export class SseService {
+  private eventSubject = new Subject<SseEvent>();
+
+  emitEvent(type: string, data: any) {
+    this.eventSubject.next({ type, data });
+  }
+
+  getEventStream() {
+    return this.eventSubject.asObservable();
+  }
+}
+\end{lstlisting}
+
+El controlador expone la ruta \texttt{GET /sse/espacios} mediante el decorador \texttt{@Sse} de NestJS, el cual configura automáticamente los encabezados HTTP necesarios (\texttt{Content-Type: text/event-stream}) y mantiene la conexión abierta mientras transforma cada valor emitido por el \texttt{Observable} en un cuadro de evento SSE:
+
+\begin{lstlisting}[language=TypeScript,caption={Controlador que expone el flujo SSE (sse.controller.ts)}]
+@Controller('sse')
+export class SseController {
+  constructor(private readonly sseService: SseService) {}
+
+  @Sse('espacios')
+  streamEspacios(): Observable<MessageEvent> {
+    return this.sseService.getEventStream().pipe(
+      map((event) => ({
+        data: JSON.stringify(event),
+        type: event.type,
+      })),
+    );
+  }
+}
+\end{lstlisting}
+
+\subsection{Integración con el ciclo de vida del ticket}
+
+El punto donde se origina cada evento SSE es el servicio \texttt{ZoneIntegrationService}, responsable de mantener sincronizado el estado del espacio en \texttt{zonas} con las operaciones que ocurren sobre un ticket. Al crear un ticket, dicho servicio marca el espacio como \texttt{OCUPADO}; al registrarse la salida, la anulación o la eliminación de un ticket activo, lo marca nuevamente como \texttt{DISPONIBLE}. Inmediatamente después de confirmar la actualización en \texttt{zonas}, el mismo método invoca \texttt{SseService.emitEvent}, cerrando el ciclo entre la acción de negocio y la notificación en tiempo real:
+
+\begin{lstlisting}[language=TypeScript,caption={Emisión del evento SSE tras sincronizar el estado del espacio (zone-integration.service.ts)}]
+await firstValueFrom(
+  this.httpService.put(
+    `${this.zoneServiceUrl}/api/v1/espacios/${idEspacio}`,
+    { idZona: espacio.idZona, descripcion: espacio.descripcion,
+      tipo: espacio.tipo, estado },
+    { headers: { Authorization: `Bearer ${this.serviceToken()}` } },
+  ),
+);
+
+this.sseService.emitEvent('Espacio actualizado', { id: idEspacio, estado });
+\end{lstlisting}
+
+\subsection{Autenticación de servicio a servicio}
+
+El microservicio \texttt{zonas} incorpora, como parte del endurecimiento de seguridad del sistema, un filtro que exige un token JWT válido con rol \texttt{admin}, \texttt{root} o \texttt{recaudador} para cualquier operación de escritura sobre zonas y espacios. Dado que la llamada que \texttt{ms-tickets} realiza hacia \texttt{zonas} para actualizar el estado de un espacio no proviene de un usuario final sino de una comunicación interna entre servicios, dicha llamada dejó de funcionar al aplicarse el filtro, pues nunca incluía un encabezado de autorización.
+
+La solución adoptada consiste en que \texttt{ms-tickets} firme su propio token, empleando el mismo secreto compartido (\texttt{JWT\_SECRET}) que utiliza el microservicio \texttt{personas} para emitir los tokens de los usuarios reales, y lo declare bajo una identidad de servicio explícita:
+
+\begin{lstlisting}[language=TypeScript,caption={Emisión de un token de identidad de servicio (zone-integration.service.ts)}]
+private serviceToken(): string {
+  return this.jwtService.sign({
+    sub: 'ms-tickets-service',
+    username: 'ms-tickets-service',
+    roles: ['admin'],
+  });
+}
+\end{lstlisting}
+
+Gracias a esta identidad explícita, cada actualización de espacio originada por \texttt{ms-tickets} queda registrada en la auditoría del sistema bajo el usuario \texttt{ms-tickets-service}, lo que permite distinguirla claramente de una acción realizada por un administrador humano.
+
+\subsection{Configuración del API Gateway para tráfico SSE}
+
+Todo el tráfico hacia los microservicios del sistema, incluyendo el flujo SSE, se enruta a través del \emph{API Gateway} Kong. Por defecto, Kong --~como la mayoría de \emph{proxies} inversos~-- almacena en búfer la respuesta completa del servicio de origen antes de reenviarla al cliente, comportamiento pensado para respuestas HTTP convencionales de tamaño finito. Un flujo SSE, sin embargo, nunca "termina": permanece abierto indefinidamente emitiendo fragmentos de datos según van ocurriendo los eventos, por lo que dicho \emph{buffering} impide que la información llegue al cliente en tiempo real.
+
+Para resolverlo, la ruta registrada en Kong para el endpoint \texttt{/sse} deshabilita explícitamente el almacenamiento en búfer tanto de la petición como de la respuesta:
+
+\begin{lstlisting}[language=bash,caption={Registro de la ruta SSE en Kong sin buffering (setup-kong.sh)}]
+curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
+  -d '{
+    "name": "tickets-sse",
+    "paths": ["/sse"],
+    "strip_path": false,
+    "request_buffering": false,
+    "response_buffering": false
+  }'
+\end{lstlisting}
+
+\subsection{Consumo en el cliente (dashboard)}
+
+El \emph{dashboard} web, servido de forma independiente como un contenedor Nginx dentro de su propio proyecto Docker Compose, se conecta al flujo SSE mediante la interfaz nativa \texttt{EventSource} del navegador, apuntando siempre hacia el \emph{gateway} Kong:
+
+\begin{lstlisting}[language=JavaScriptDoc,caption={Conexión al flujo SSE desde el dashboard (app.js)}]
+const conectarSSE = () => {
+  const eventSource = new EventSource(SSE_URL);
+
+  eventSource.onopen = () => setConnectionStatus(true);
+
+  eventSource.onmessage = (event) => {
+    JSON.parse(event.data);
+    cargarEspacios(); // recarga el listado completo de espacios
+  };
+
+  eventSource.onerror = () => {
+    setConnectionStatus(false);
+    eventSource.close();
+    setTimeout(conectarSSE, 5000); // reintento tras 5 segundos
+  };
+};
+\end{lstlisting}
+
+Ante cualquier evento recibido, el cliente vuelve a consultar el listado completo de espacios en lugar de aplicar únicamente el cambio puntual reportado; esta estrategia, aunque más simple que una actualización incremental, tiene la ventaja de reflejar también la creación de nuevos espacios y de mantener la interfaz consistente ante eventos fuera de orden. Como salvaguarda adicional, el \emph{dashboard} también refresca la información cada 30 segundos mediante un \emph{polling} de respaldo, de modo que una eventual pérdida silenciosa de la conexión SSE no deje la interfaz permanentemente desactualizada. Cada espacio se colorea según su estado (\texttt{DISPONIBLE} en verde, \texttt{OCUPADO} en rojo, \texttt{RESERVADO} en violeta, \texttt{MANTENIMIENTO} en ámbar, \texttt{INACTIVO} en gris), reforzando visualmente la información recibida en tiempo real.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\linewidth]{img/estadosCreates.png}
+  \caption{Dashboard de espacios (\texttt{localhost:8085}) mostrando simultáneamente los cuatro estados con color distintivo --~\texttt{OCUPADO} en rojo, \texttt{RESERVADO} en violeta, \texttt{MANTENIMIENTO} en ámbar y \texttt{DISPONIBLE} en verde~-- junto con el indicador de conexión SSE activa (\emph{Conectado}) en la esquina superior derecha.}
+  \label{fig:dashboard-estados}
+\end{figure}
+
+La Figura \ref{fig:dashboard-estados} corresponde a una captura real del \emph{dashboard} en ejecución, tomada después de haber actualizado, mediante peticiones directas al microservicio \texttt{zonas}, el estado de distintos espacios de prueba. El indicador \emph{Conectado} en la parte superior confirma que la conexión \texttt{EventSource} hacia \texttt{/sse/espacios} se mantenía activa en el momento de la captura, y la diferenciación cromática entre las cuatro tarjetas permite verificar, de un solo vistazo, que cada valor del enumerado \texttt{EstadoEspacio} recibe un tratamiento visual propio y no se confunde con los demás.
+
+\subsection{Verificación funcional}
+
+Se verificó el flujo completo de extremo a extremo:
+
+\begin{itemize}
+  \item Con una conexión abierta al endpoint \texttt{GET /sse/espacios} a través de Kong, se confirmó mediante los encabezados de respuesta (\texttt{Content-Type: text/event-stream}, sin indicios de buffering) que el flujo permanecía activo indefinidamente.
+  \item Al registrar la creación de un ticket para un espacio disponible, se observó en la conexión SSE la llegada inmediata de un evento \texttt{Espacio actualizado} con el nuevo estado \texttt{OCUPADO}, y se confirmó mediante una consulta directa al microservicio \texttt{zonas} que el espacio reflejaba efectivamente dicho estado.
+\end{itemize}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\linewidth]{img/GeneracionTocketEstadoOcupado.png}
+  \caption{Respuesta \texttt{201 Created} de \texttt{POST /tickets} (panel derecho) y actualización inmediata del \emph{dashboard} (panel izquierdo): el espacio \texttt{ZON1-1} pasa a \texttt{OCUPADO} y su tarjeta muestra, en tiempo real, el usuario, la placa, el tipo de vehículo, la hora de ingreso, el contador de tiempo transcurrido y el valor en curso según la tarifa \texttt{POR\_HORA} elegida al crear el ticket.}
+  \label{fig:ticket-ocupado}
+\end{figure}
+
+La Figura \ref{fig:ticket-ocupado} evidencia que, apenas confirmada la creación del ticket, el evento SSE emitido por \texttt{ZoneIntegrationService} ya se reflejó en el \emph{dashboard} sin necesidad de recargar la página manualmente ni esperar al \emph{polling} de respaldo.
+
+\begin{itemize}
+  \item Al registrar la salida del vehículo asociado a ese ticket, se observó un segundo evento SSE indicando el regreso del espacio al estado \texttt{DISPONIBLE}, cerrando el ciclo completo.
+\end{itemize}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\linewidth]{img/liberacionTicketRecaudacion.png}
+  \caption{Respuesta \texttt{200 OK} de \texttt{PATCH /tickets/:id/salida} (panel derecho), con \texttt{estado\_ticket} en \texttt{pagado} y \texttt{valor\_recaudado} calculado automáticamente por el servidor, junto con el \emph{dashboard} (panel izquierdo) reflejando de inmediato el regreso del espacio \texttt{ZON1-1} al estado \texttt{DISPONIBLE}.}
+  \label{fig:ticket-liberado}
+\end{figure}
+
+La Figura \ref{fig:ticket-liberado} corresponde al mismo ticket ilustrado en la Figura \ref{fig:ticket-ocupado} una vez registrada su salida: el cuerpo de la respuesta confirma que \texttt{valor\_recaudado} se calculó del lado del servidor a partir del plan de tarifa y el tiempo real transcurrido, sin intervención manual, y el \emph{dashboard} liberó el espacio en el mismo instante gracias al evento SSE correspondiente.
+
+\begin{itemize}
+  \item Se verificó en el registro de auditoría (\texttt{ms-audit}) que ambas actualizaciones de espacio quedaron atribuidas al usuario de servicio \texttt{ms-tickets-service}, confirmando el correcto funcionamiento de la autenticación de servicio a servicio descrita.
+\end{itemize}
+
+\newpage
+
+% ------------------------------------------------------------
+% CONCLUSIONES
+% ------------------------------------------------------------
+\section{Conclusiones}
+
+\begin{itemize}
+  \item Server-Sent Events constituye una solución adecuada y de bajo costo de implementación para el caso de actualizaciones unidireccionales de baja a media frecuencia, como la notificación de cambios de estado de un espacio de estacionamiento, evitando la sobrecarga que introduciría un esquema de \emph{polling} constante.
+  \item El uso de un \texttt{Subject} de RxJS como canal interno de publicación-suscripción simplifica notablemente la propagación de eventos entre distintos servicios de una misma aplicación NestJS, desacoplando el punto donde ocurre el cambio de negocio del punto donde este se transmite al cliente.
+  \item El endurecimiento de la seguridad de un microservicio mediante controles de autenticación y autorización puede romper, de forma no evidente, integraciones internas preexistentes entre servicios si estas no se identifican y autentican de manera explícita; en este caso, resolverlo mediante una identidad de servicio firmada con el secreto compartido permitió mantener tanto la seguridad como la trazabilidad de dichas llamadas.
+  \item El comportamiento por defecto de un \emph{API Gateway} --~en particular el almacenamiento en búfer de las respuestas~-- no es neutro frente a todos los tipos de tráfico, y debe revisarse y ajustarse explícitamente cuando se introduce un patrón de comunicación distinto al de petición-respuesta convencional, como es el caso de un flujo SSE.
+  \item Combinar un canal de actualización en tiempo real con un mecanismo de respaldo basado en \emph{polling} periódico aporta resiliencia a la interfaz de usuario frente a fallos silenciosos de la conexión primaria.
+\end{itemize}
+
+% ------------------------------------------------------------
+% RECOMENDACIONES
+% ------------------------------------------------------------
+\section{Recomendaciones}
+
+\begin{itemize}
+  \item Sustituir, en un entorno de producción, el token de servicio estático firmado con el secreto compartido por credenciales de vida corta (por ejemplo, tokens de servicio con expiración breve y renovación automática) o por autenticación mutua TLS entre microservicios, reduciendo el impacto de una eventual filtración del secreto.
+  \item Evaluar la migración hacia una actualización incremental del estado en el cliente (aplicar únicamente el cambio reportado por el evento) en lugar de recargar el listado completo de espacios, especialmente si el número de espacios gestionados por el sistema creciera de forma significativa.
+  \item Incorporar un identificador de correlación en cada evento SSE que permita rastrear, en los registros de auditoría, la operación de negocio exacta que originó una actualización de espacio determinada.
+  \item Documentar explícitamente, dentro del código y de la configuración de despliegue, las identidades de servicio utilizadas para comunicación interna (como \texttt{ms-tickets-service}), de manera que sean fácilmente reconocibles y auditables por el equipo de operaciones.
+  \item Considerar la adopción de WebSockets únicamente si en el futuro se requiriera que el \emph{dashboard} envíe información hacia el servidor en el mismo canal; mientras el requerimiento permanezca unidireccional, SSE sigue siendo la alternativa más simple y adecuada.
+\end{itemize}
+
+\newpage
+
+% ------------------------------------------------------------
+% BIBLIOGRAFÍA
+% ------------------------------------------------------------
+\begin{thebibliography}{9}
+\addcontentsline{toc}{section}{Bibliografía}
+
+\bibitem{whatwg}
+WHATWG. (2024). \emph{HTML Living Standard -- Server-sent events}. \url{https://html.spec.whatwg.org/multipage/server-sent-events.html}
+
+\bibitem{mdn}
+MDN Web Docs. (2024). \emph{Using server-sent events}. Mozilla. \url{https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events}
+
+\bibitem{nestjs-sse}
+NestJS. (2024). \emph{Server-Sent Events}. Documentación oficial. \url{https://docs.nestjs.com/techniques/server-sent-events}
+
+\bibitem{kong}
+Kong Inc. (2024). \emph{Kong Gateway Documentation -- Proxy Reference}. \url{https://docs.konghq.com}
+
+\bibitem{jwt}
+Jones, M., Bradley, J., y Sakimura, N. (2015). \emph{RFC 7519: JSON Web Token (JWT)}. Internet Engineering Task Force (IETF). \url{https://www.rfc-editor.org/rfc/rfc7519}
+
+\end{thebibliography}
+
+\end{document}

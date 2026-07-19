@@ -52,7 +52,7 @@ Authorization: Bearer {{login.response.body.$.access_token}}
   "id_espacio": "{{espacioId}}",
   "id_vehiculo": "{{vehiculoPlaca}}",
   "tipo_vehiculo": "Auto",
-  "fecha_hora_ingreso": "2026-07-08T09:00:00.000Z"
+  "tipo_tarifa": "POR_HORA"
 }
 
 ### 6. Anular el ticket (motivo administrativo)
