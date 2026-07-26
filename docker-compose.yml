@@ -181,10 +181,10 @@ services:
     environment:
       NODE_ENV: docker
       PORT: 3002
-      DB_HOST: postgres
+      DB_HOST: aws-1-us-west-2.pooler.supabase.com
       DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_USER: postgres.wxjxviqtqyrzflxaidur
+      DB_PASSWORD: ${SUPABASE_DB_PASSWORD}
       DB_NAME: asignacion_db
       VEHICLE_SERVICE_URL: http://vehiculos:3000
       USER_SERVICE_URL: http://personas:3001
@@ -226,10 +226,10 @@ services:
     environment:
       NODE_ENV: docker
       PORT: 3000
-      DB_HOST: postgres
+      DB_HOST: aws-1-us-west-2.pooler.supabase.com
       DB_PORT: 5432
-      DB_USUARIO: postgres
-      DB_CONTRASENA: postgres
+      DB_USUARIO: postgres.wxjxviqtqyrzflxaidur
+      DB_CONTRASENA: ${SUPABASE_DB_PASSWORD}
       DB_NOMBRE: vehiculos_db
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -268,10 +268,10 @@ services:
     environment:
       NODE_ENV: docker
       PORT: 3001
-      DB_HOST: postgres
+      DB_HOST: aws-1-us-west-2.pooler.supabase.com
       DB_PORT: 5432
-      DB_USUARIO: postgres
-      DB_CONTRASENA: postgres
+      DB_USUARIO: postgres.wxjxviqtqyrzflxaidur
+      DB_CONTRASENA: ${SUPABASE_DB_PASSWORD}
       DB_NOMBRE: personas_db
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -308,9 +308,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/zonas_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/zonas_db
+      SPRING_DATASOURCE_USERNAME: postgres.wxjxviqtqyrzflxaidur
+      SPRING_DATASOURCE_PASSWORD: ${SUPABASE_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_PROFILES_ACTIVE: docker
       SPRING_RABBITMQ_HOST: rabbitmq
@@ -350,10 +350,10 @@ services:
     environment:
       NODE_ENV: docker
       PORT: 3003
-      DB_HOST: postgres
+      DB_HOST: aws-1-us-west-2.pooler.supabase.com
       DB_PORT: 5432
-      DB_USUARIO: postgres
-      DB_CONTRASENA: postgres
+      DB_USUARIO: postgres.wxjxviqtqyrzflxaidur
+      DB_CONTRASENA: ${SUPABASE_DB_PASSWORD}
       DB_NOMBRE: tickets_db
       VEHICLE_SERVICE_URL: http://vehiculos:3000
       USER_SERVICE_URL: http://personas:3001
@@ -395,10 +395,10 @@ services:
     environment:
       NODE_ENV: docker
       PORT: 3004
-      DB_HOST: postgres
+      DB_HOST: aws-1-us-west-2.pooler.supabase.com
       DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_USER: postgres.wxjxviqtqyrzflxaidur
+      DB_PASSWORD: ${SUPABASE_DB_PASSWORD}
       DB_NAME: audit_db
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672

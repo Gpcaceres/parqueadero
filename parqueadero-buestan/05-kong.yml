@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: parqueadero-buestan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong
+  template:
+    metadata:
+      labels:
+        app: kong
+    spec:
+      # Reemplaza a kong-migration + "depends_on: condition: service_healthy"
+      # de docker-compose: si kong-db todavía no acepta conexiones, este
+      # initContainer falla, el pod completo reintenta solo (restartPolicy
+      # por defecto), y el contenedor principal de Kong nunca arranca hasta
+      # que las migraciones terminen bien.
+      initContainers:
+        - name: kong-migrations
+          image: kong:3.0-alpine
+          command: ["kong", "migrations", "bootstrap"]
+          env:
+            - name: KONG_DATABASE
+              value: "postgres"
+            - name: KONG_PG_HOST
+              value: "kong-db"
+            - name: KONG_PG_USER
+              value: "kong"
+            - name: KONG_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-secret
+                  key: KONG_PG_PASSWORD
+      containers:
+        - name: kong
+          image: kong:3.0-alpine
+          ports:
+            - containerPort: 8000
+            - containerPort: 8001
+          env:
+            - name: KONG_DATABASE
+              value: "postgres"
+            - name: KONG_PG_HOST
+              value: "kong-db"
+            - name: KONG_PG_USER
+              value: "kong"
+            - name: KONG_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-secret
+                  key: KONG_PG_PASSWORD
+            - name: KONG_PROXY_ACCESS_LOG
+              value: "/dev/stdout"
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: "/dev/stdout"
+            - name: KONG_PROXY_ERROR_LOG
+              value: "/dev/stderr"
+            - name: KONG_ADMIN_ERROR_LOG
+              value: "/dev/stderr"
+            - name: KONG_ADMIN_LISTEN
+              value: "0.0.0.0:8001"
+            # "auto" detecta los CPUs del NODO (16 aqui), no el limite del
+            # contenedor -- lanzaba 16 workers nginx/Lua y superaba el limite
+            # de memoria del pod, matando workers en bucle (signal 9) sin
+            # que ninguno llegara a responder una request HTTP completa.
+            - name: KONG_NGINX_WORKER_PROCESSES
+              value: "2"
+          # "kong health" (exec probe) obliga a lanzar un proceso nuevo en el
+          # contenedor en cada chequeo -- bajo carga puede tardar más que el
+          # timeout y kubelet mata el pod aunque Kong esté respondiendo bien.
+          # tcpSocket sobre el puerto admin es mucho más liviano.
+          readinessProbe:
+            tcpSocket: { port: 8001 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket: { port: 8001 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "150m"
+            limits:
+              memory: "512Mi"
+              cpu: "400m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong
+  namespace: parqueadero-buestan
+spec:
+  # LoadBalancer (no Ingress): front-end/app/js/config.js tiene hardcodeado
+  # KONG_URL="http://localhost:8000". Con "minikube tunnel" corriendo, un
+  # Service LoadBalancer en el puerto 8000 queda alcanzable exactamente en
+  # localhost:8000, sin tocar el frontend.
+  type: LoadBalancer
+  selector:
+    app: kong
+  ports:
+    - name: proxy
+      port: 8000
+      targetPort: 8000
+    - name: admin
+      port: 8001
+      targetPort: 8001

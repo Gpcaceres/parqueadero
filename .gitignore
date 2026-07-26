@@ -35,7 +35,16 @@ target/
 .env.development.local
 .env.test.local
 .env.production.local
-.env.example (solo incluir en git)
+# .env.example NO se ignora (solo incluir en git)
+
+# Secret de Kubernetes generado con valores reales a partir de la plantilla
+# deployment/02-secrets.yml -- nunca debe llevar el password real a git.
+deployment/*.local.yml
+# EXCEPCIÓN deliberada: en las carpetas de práctica por integrante
+# (parqueadero-caceres/buestan/masapanta) SÍ se commitea el secret real,
+# a pedido explícito, para que cada quien pueda levantar el clúster sin
+# pasos extra. Repo privado/interno -- no aplica el mismo criterio que a
+# deployment/ en la raíz.
 
 # ============================================
 # IDE y Editores

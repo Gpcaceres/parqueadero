@@ -28,6 +28,9 @@ import { SseModule } from '../sse/sse.module';
     PersonaIntegrationService,
     EventPublisher,
   ],
-  exports: [TicketsService],
+  // ZoneIntegrationService y PersonaIntegrationService se exportan para que
+  // ReservasModule los reuse (reservar/liberar espacios y enriquecer con el
+  // contacto de quien reservó) sin duplicar providers.
+  exports: [TicketsService, ZoneIntegrationService, PersonaIntegrationService],
 })
 export class TicketsModule {}

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar sesión · Parqueadero ESPE</title>
+    <meta name="description" content="Sistema Inteligente de Gestión de Parqueadero - ESPE" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🅿️</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: "#f0fdf6", 100: "#dcfce9", 200: "#a0d5b9", 300: "#8ceabc",
+                400: "#4ddb92", 500: "#1bcf6c", 600: "#0cb669", 700: "#099358",
+                800: "#077449", 900: "#065f3c",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body class="min-h-screen font-sans antialiased bg-slate-950">
+    <div class="min-h-screen grid lg:grid-cols-2">
+
+      <!-- Panel izquierdo: branding -->
+      <div class="hero-panel relative hidden lg:flex flex-col justify-between p-12 overflow-hidden text-white">
+        <div class="hero-blob hero-blob-1"></div>
+        <div class="hero-blob hero-blob-2"></div>
+        <div class="hero-grid"></div>
+
+        <div class="relative z-10 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center text-2xl ring-1 ring-white/20">🅿️</div>
+          <span class="font-bold text-lg tracking-tight">Parqueadero ESPE</span>
+        </div>
+
+        <div class="relative z-10 max-w-md">
+          <h1 class="text-4xl xl:text-5xl font-extrabold leading-tight tracking-tight mb-5">
+            Gestión inteligente<br />de espacios en tiempo real
+          </h1>
+          <p class="text-brand-100/80 text-base leading-relaxed mb-8">
+            Monitorea la disponibilidad, controla el ingreso y la salida de vehículos, y administra
+            reservas desde un único panel, sincronizado al instante.
+          </p>
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-3 text-sm text-brand-100/90">
+              <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center ring-1 ring-white/10">⚡</span>
+              Actualización en vivo vía eventos (SSE)
+            </div>
+            <div class="flex items-center gap-3 text-sm text-brand-100/90">
+              <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center ring-1 ring-white/10">🔒</span>
+              Roles y permisos por tipo de usuario
+            </div>
+            <div class="flex items-center gap-3 text-sm text-brand-100/90">
+              <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center ring-1 ring-white/10">☸️</span>
+              Arquitectura de microservicios en Kubernetes
+            </div>
+          </div>
+        </div>
+
+        <p class="relative z-10 text-xs text-brand-200/50">© 2026 Parqueadero ESPE · Todos los derechos reservados</p>
+      </div>
+
+      <!-- Panel derecho: formulario -->
+      <div class="flex items-center justify-center p-6 sm:p-10 bg-slate-50">
+        <div class="w-full max-w-sm">
+
+          <div class="lg:hidden flex items-center gap-3 justify-center mb-8">
+            <div class="w-11 h-11 rounded-xl bg-brand-600 flex items-center justify-center text-2xl">🅿️</div>
+            <span class="font-bold text-lg text-slate-800 tracking-tight">Parqueadero ESPE</span>
+          </div>
+
+          <div class="login-card bg-white rounded-2xl shadow-xl shadow-slate-200/60 ring-1 ring-slate-100 p-8">
+            <h1 class="text-2xl font-bold text-slate-800 mb-1">Bienvenido de nuevo</h1>
+            <p class="text-sm text-slate-500 mb-7">Inicia sesión para continuar</p>
+
+            <div id="bannerExpirado" class="hidden mb-5 flex items-start gap-2 text-sm bg-amber-50 text-amber-800 ring-1 ring-amber-200 rounded-xl px-3.5 py-2.5">
+              <span>⏱️</span>
+              <span>Tu sesión expiró, inicia sesión de nuevo.</span>
+            </div>
+
+            <form id="formLogin" class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="loginUsername">Usuario</label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">👤</span>
+                  <input id="loginUsername" type="text" required autocomplete="username" placeholder="tu.usuario"
+                    class="w-full border border-slate-200 bg-slate-50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-slate-800 transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:bg-white" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5" for="loginPassword">Contraseña</label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">🔒</span>
+                  <input id="loginPassword" type="password" required autocomplete="current-password" placeholder="••••••••"
+                    class="w-full border border-slate-200 bg-slate-50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-slate-800 transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:bg-white" />
+                </div>
+              </div>
+
+              <div id="loginError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3.5 py-2.5"></div>
+
+              <button type="submit"
+                class="btn-primary w-full text-white font-semibold rounded-xl px-3 py-2.5 text-sm flex items-center justify-center gap-2">
+                Ingresar
+                <span aria-hidden="true">→</span>
+              </button>
+            </form>
+          </div>
+
+          <p class="text-center text-xs text-slate-400 mt-6">Sistema Inteligente de Gestión de Parqueadero</p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="js/login.js"></script>
+  </body>
+</html>

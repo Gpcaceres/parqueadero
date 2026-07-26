@@ -49,4 +49,27 @@ export class PersonaIntegrationService {
       return null;
     }
   }
+
+  // Para la tarjeta de un espacio RESERVADO: el personal necesita datos de
+  // contacto de quien reservó (no solo el nombre) para poder ubicarlo si
+  // hace falta. Mismo patrón tolerante que obtenerNombreCompleto.
+  async obtenerContacto(
+    idUsuario: string,
+  ): Promise<{ nombre: string | null; email: string | null; telefono: string | null } | null> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.personaServiceUrl}/personas/${idUsuario}`, {
+          headers: { Authorization: `Bearer ${this.serviceToken()}` },
+        }),
+      );
+      const { first_name, last_name, email, phone } = response.data;
+      const nombre = [first_name, last_name].filter(Boolean).join(' ') || null;
+      return { nombre, email: email ?? null, telefono: phone ?? null };
+    } catch (error: any) {
+      this.logger.warn(
+        `No se pudo obtener el contacto del usuario ${idUsuario}: ${error.message}`,
+      );
+      return null;
+    }
+  }
 }

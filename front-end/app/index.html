@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parqueadero ESPE · Panel</title>
+    <meta name="description" content="Sistema Inteligente de Gestión de Parqueadero - ESPE" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🅿️</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: "#f0fdf6", 100: "#dcfce9", 200: "#a0d5b9", 300: "#8ceabc",
+                400: "#4ddb92", 500: "#1bcf6c", 600: "#0cb669", 700: "#099358",
+                800: "#077449", 900: "#065f3c",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body class="bg-slate-50 font-sans antialiased">
+
+    <!-- Encabezado -->
+    <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/70">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center text-xl shadow-md shadow-brand-500/30">🅿️</div>
+          <div class="leading-tight">
+            <h1 class="text-lg font-extrabold text-slate-800 tracking-tight">Parqueadero</h1>
+            <p class="text-[11px] text-slate-400 font-semibold tracking-wide uppercase">ESPE · Panel de control</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <span id="totalEspacios" class="text-xs font-semibold bg-brand-50 text-brand-700 px-3 py-1.5 rounded-full ring-1 ring-brand-100">Cargando...</span>
+          <span id="statusConexion" class="flex items-center gap-1.5 text-xs font-medium bg-slate-50 px-3 py-1.5 rounded-full ring-1 ring-slate-200">
+            <span class="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" id="indicator"></span>
+            <span id="statusText" class="text-slate-600">Conectado</span>
+          </span>
+          <span id="userBadge" class="text-xs font-semibold bg-slate-800 text-white px-3 py-1.5 rounded-full"></span>
+          <button id="btnLogout" class="text-xs font-semibold text-red-600 hover:text-white hover:bg-red-600 ring-1 ring-red-200 rounded-full px-3.5 py-1.5 transition-colors">
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6">
+
+      <!-- Tabs -->
+      <nav class="flex flex-wrap gap-1.5 mb-6 sm:mb-8 bg-white p-1.5 rounded-xl shadow-sm ring-1 ring-slate-200 w-fit max-w-full overflow-x-auto">
+        <button data-tab="espacios" class="tab-btn flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 bg-brand-600 text-white shadow-md shadow-brand-500/30">
+          <span>🚗</span> Espacios
+        </button>
+        <button data-tab="tickets" id="tabBtnTickets" class="tab-btn flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+          <span>🎫</span> Tickets
+        </button>
+        <button data-tab="vehiculos" id="tabBtnVehiculos" class="tab-btn hidden items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+          <span>🚙</span> Vehículos
+        </button>
+        <button data-tab="zonas" id="tabBtnZonas" class="tab-btn hidden items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+          <span>🗺️</span> Zonas y Espacios
+        </button>
+        <button data-tab="usuarios" id="tabBtnUsuarios" class="tab-btn hidden items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+          <span>👥</span> Personas y Usuarios
+        </button>
+        <button data-tab="auditoria" id="tabBtnAuditoria" class="tab-btn hidden items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+          <span>🛡️</span> Auditoría
+        </button>
+      </nav>
+
+      <!-- Tab: Espacios -->
+      <section data-tab-panel="espacios" class="space-y-8 fade-in">
+        <div id="espaciosResumen" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div>
+        <div id="espaciosContainer" class="space-y-8"></div>
+        <footer class="text-sm text-slate-400 text-center border-t border-slate-200 pt-4">
+          Última actualización: <span id="lastUpdate" class="font-medium text-slate-500">--</span>
+        </footer>
+      </section>
+
+      <!-- Tab: Tickets -->
+      <section data-tab-panel="tickets" class="hidden space-y-4 fade-in">
+        <h2 id="ticketsTitulo" class="text-xl font-bold text-slate-800 flex items-center gap-2"><span>🎫</span> Tickets</h2>
+        <div id="ticketsEstadisticas" class="hidden grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
+        <div class="card-surface overflow-x-auto">
+          <table class="w-full text-left table-modern">
+            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 font-semibold">
+              <tr>
+                <th class="px-4 py-3">Espacio</th>
+                <th class="px-4 py-3">Vehículo</th>
+                <th class="px-4 py-3">Ingreso</th>
+                <th class="px-4 py-3">Salida</th>
+                <th class="px-4 py-3">Tarifa</th>
+                <th class="px-4 py-3">Estado</th>
+                <th class="px-4 py-3">Recaudado</th>
+                <th class="px-4 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="ticketsTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab: Vehículos -->
+      <section data-tab-panel="vehiculos" class="hidden space-y-4 fade-in">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><span>🚙</span> Vehículos</h2>
+          <button id="btnNuevoVehiculo" class="btn-primary text-white text-sm font-semibold rounded-xl px-4 py-2.5">
+            + Nuevo vehículo
+          </button>
+        </div>
+        <div class="card-surface overflow-x-auto">
+          <table class="w-full text-left table-modern">
+            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 font-semibold">
+              <tr>
+                <th class="px-4 py-3">Placa</th>
+                <th class="px-4 py-3">Tipo</th>
+                <th class="px-4 py-3">Marca/Modelo</th>
+                <th class="px-4 py-3">Color</th>
+                <th class="px-4 py-3">Año</th>
+                <th class="px-4 py-3">Clasificación</th>
+                <th class="px-4 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="vehiculosTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab: Zonas y Espacios -->
+      <section data-tab-panel="zonas" class="hidden space-y-4 fade-in">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><span>🗺️</span> Zonas y Espacios</h2>
+          <button id="btnNuevaZona" class="btn-primary text-white text-sm font-semibold rounded-xl px-4 py-2.5">
+            + Nueva zona
+          </button>
+        </div>
+        <div id="zonasContainer" class="space-y-3"></div>
+      </section>
+
+      <!-- Tab: Personas y Usuarios (solo admin/root) -->
+      <section data-tab-panel="usuarios" class="hidden space-y-4 fade-in">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><span>👥</span> Personas y Usuarios</h2>
+          <button id="btnNuevaPersonaAdmin" class="btn-primary text-white text-sm font-semibold rounded-xl px-4 py-2.5">
+            + Nueva persona
+          </button>
+        </div>
+        <div class="card-surface overflow-x-auto">
+          <table class="w-full text-left table-modern">
+            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 font-semibold">
+              <tr>
+                <th class="px-4 py-3">Nombre</th>
+                <th class="px-4 py-3">Cédula</th>
+                <th class="px-4 py-3">Email</th>
+                <th class="px-4 py-3">Cuenta</th>
+                <th class="px-4 py-3">Roles</th>
+                <th class="px-4 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="usuariosTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab: Auditoría (solo admin/root) -->
+      <section data-tab-panel="auditoria" class="hidden space-y-4 fade-in">
+        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><span>🛡️</span> Auditoría</h2>
+        <div class="card-surface overflow-x-auto">
+          <table class="w-full text-left table-modern">
+            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 font-semibold">
+              <tr>
+                <th class="px-4 py-3">Fecha</th>
+                <th class="px-4 py-3">Servicio</th>
+                <th class="px-4 py-3">Acción</th>
+                <th class="px-4 py-3">Entidad</th>
+                <th class="px-4 py-3">Usuario</th>
+                <th class="px-4 py-3">Rol</th>
+                <th class="px-4 py-3">IP</th>
+              </tr>
+            </thead>
+            <tbody id="auditTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Modal: crear ticket (registrar ingreso) -->
+    <div id="modalCrearTicket" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-md p-7">
+        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>🎫</span> Registrar ingreso</h3>
+        <form id="formCrearTicket" class="space-y-3">
+          <input type="hidden" id="ticketEspacioId" />
+
+          <div id="bloqueBuscarPersona" class="relative">
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-medium text-slate-700">Persona (buscar por nombre o cédula)</label>
+              <button type="button" id="btnMostrarNuevaPersona" class="hidden text-xs font-semibold text-brand-600 hover:text-brand-800">
+                + Nueva persona
+              </button>
+            </div>
+            <input id="ticketPersonaBusqueda" type="text" required autocomplete="off" class="input-field" />
+            <div id="ticketPersonaResultados" class="hidden absolute z-10 w-full mt-1 card-surface shadow-lg max-h-48 overflow-y-auto"></div>
+          </div>
+
+          <!-- Alta rápida de persona (solo admin/root, ver personas.controller.ts) -->
+          <div id="bloqueNuevaPersona" class="hidden border border-slate-200 rounded-xl p-3 space-y-2 bg-slate-50">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-slate-700">Nueva persona</span>
+              <button type="button" id="btnCancelarNuevaPersona" class="text-xs font-semibold text-slate-500 hover:text-slate-700">Cancelar</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="npFirstName" type="text" placeholder="Nombre" class="input-field-sm" />
+              <input id="npLastName" type="text" placeholder="Apellido" class="input-field-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="npDni" type="text" placeholder="Cédula" class="input-field-sm" />
+              <input id="npPhone" type="text" placeholder="Teléfono (opcional)" class="input-field-sm" />
+            </div>
+            <input id="npEmail" type="email" placeholder="Email" class="input-field-sm w-full" />
+            <div id="nuevaPersonaError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+            <button type="button" id="btnGuardarNuevaPersona" class="w-full btn-primary text-white text-sm font-semibold rounded-xl px-3 py-2">
+              Guardar persona
+            </button>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-medium text-slate-700">Placa o CC del vehículo</label>
+              <button type="button" id="btnMostrarNuevoVehiculo" class="text-xs font-semibold text-brand-600 hover:text-brand-800">
+                + Nuevo vehículo
+              </button>
+            </div>
+            <input id="ticketVehiculoPlaca" type="text" required list="vehiculosDatalist" autocomplete="off" class="input-field" />
+            <datalist id="vehiculosDatalist"></datalist>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de vehículo</label>
+            <select id="ticketTipoVehiculo" class="input-field">
+              <option value="Auto">Auto</option>
+              <option value="Moto">Moto</option>
+              <option value="Camioneta">Camioneta</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Tarifa</label>
+            <select id="ticketTipoTarifa" class="input-field">
+              <option value="POR_HORA">Por hora o fracción</option>
+              <option value="MENSUAL">Mensual</option>
+              <option value="NOCTURNO">Nocturno (19:00-07:00)</option>
+            </select>
+          </div>
+
+          <div id="ticketCrearError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="btnCancelarCrearTicket" class="flex-1 btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cancelar</button>
+            <button type="submit" class="flex-1 btn-primary text-white text-sm font-semibold rounded-xl px-3 py-2.5">Crear ticket</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: anular ticket -->
+    <div id="modalAnularTicket" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-md p-7">
+        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>🚫</span> Anular ticket</h3>
+        <form id="formAnularTicket" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Motivo (opcional)</label>
+            <textarea id="anularMotivo" rows="3" class="input-field"></textarea>
+          </div>
+          <div id="ticketAnularError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="btnCancelarAnular" class="flex-1 btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cancelar</button>
+            <button type="submit" class="flex-1 btn-danger text-white text-sm font-semibold rounded-xl px-3 py-2.5">Anular</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: crear/editar vehículo -->
+    <div id="modalVehiculo" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-md p-7 max-h-[90vh] overflow-y-auto">
+        <h3 id="vehiculoModalTitulo" class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>🚙</span> Nuevo vehículo</h3>
+        <form id="formVehiculo" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+            <select id="vehiculoTipo" class="input-field">
+              <option value="Auto">Auto</option>
+              <option value="Moto">Moto</option>
+              <option value="Camioneta">Camioneta</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Placa</label>
+              <input id="vehiculoPlaca" type="text" required placeholder="ABC-1234" class="input-field" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Año</label>
+              <input id="vehiculoAnio" type="number" required class="input-field" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Marca</label>
+              <input id="vehiculoMarca" type="text" required class="input-field" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Modelo</label>
+              <input id="vehiculoModelo" type="text" required class="input-field" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+              <input id="vehiculoColor" type="text" required class="input-field" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Clasificación</label>
+              <select id="vehiculoClasificacion" class="input-field">
+                <option value="GASOLINA">Gasolina</option>
+                <option value="ELECTRICO">Eléctrico</option>
+                <option value="HIBRIDO">Híbrido</option>
+                <option value="DIESEL">Diésel</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Campos específicos por tipo -->
+          <fieldset id="camposAuto" class="grid grid-cols-3 gap-2 border-t border-slate-200 pt-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Puertas</label>
+              <input id="autoNumeroPuertas" type="number" min="2" max="5" class="input-field-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Maletero (L)</label>
+              <input id="autoCapacidadMaletero" type="number" min="100" max="1000" class="input-field-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Carga (kg)</label>
+              <input id="autoCapacidadCarga" type="number" min="0" max="10000" class="input-field-sm" />
+            </div>
+          </fieldset>
+
+          <fieldset id="camposMoto" class="hidden border-t border-slate-200 pt-3">
+            <label class="block text-xs font-medium text-slate-700 mb-1">Subtipo</label>
+            <select id="motoSubtipo" class="input-field-sm">
+              <option value="DEPORTIVA">Deportiva</option>
+              <option value="SCOOTER">Scooter</option>
+              <option value="MOTOCROSS">Motocross</option>
+            </select>
+          </fieldset>
+
+          <fieldset id="camposCamioneta" class="hidden grid grid-cols-2 gap-2 border-t border-slate-200 pt-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Carga (kg)</label>
+              <input id="camionetaCapacidadCarga" type="number" min="0" max="10000" class="input-field-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Cabina</label>
+              <select id="camionetaCabina" class="input-field-sm">
+                <option value="Simple">Simple</option>
+                <option value="Doble">Doble</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <div id="vehiculoError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="btnCancelarVehiculo" class="flex-1 btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cancelar</button>
+            <button type="submit" class="flex-1 btn-primary text-white text-sm font-semibold rounded-xl px-3 py-2.5">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: crear/editar zona -->
+    <div id="modalZona" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-md p-7">
+        <h3 id="zonaModalTitulo" class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>🗺️</span> Nueva zona</h3>
+        <form id="formZona" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+            <input id="zonaNombre" type="text" required class="input-field" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Descripción (opcional)</label>
+            <input id="zonaDescripcion" type="text" class="input-field" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+              <select id="zonaTipo" class="input-field">
+                <option value="REGULAR">Regular</option>
+                <option value="VIP">VIP</option>
+                <option value="INTERNA">Interna</option>
+                <option value="EXTERNA">Externa</option>
+                <option value="PREFERENCIAL">Preferencial</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Capacidad (opcional)</label>
+              <input id="zonaCapacidad" type="number" min="0" class="input-field" />
+            </div>
+          </div>
+          <div id="zonaError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="btnCancelarZona" class="flex-1 btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cancelar</button>
+            <button type="submit" class="flex-1 btn-primary text-white text-sm font-semibold rounded-xl px-3 py-2.5">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: crear/editar espacio -->
+    <div id="modalEspacio" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-md p-7">
+        <h3 id="espacioModalTitulo" class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>🅿️</span> Nuevo espacio</h3>
+        <form id="formEspacio" class="space-y-3">
+          <input type="hidden" id="espacioZonaId" />
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Descripción (opcional)</label>
+            <input id="espacioDescripcion" type="text" class="input-field" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+              <select id="espacioTipo" class="input-field">
+                <option value="CARRO">Carro</option>
+                <option value="MOTO">Moto</option>
+                <option value="AUTOBUS">Autobús</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+              <select id="espacioEstado" class="input-field">
+                <option value="DISPONIBLE">Disponible</option>
+                <option value="OCUPADO">Ocupado</option>
+                <option value="RESERVADO">Reservado</option>
+                <option value="MANTENIMIENTO">Mantenimiento</option>
+                <option value="INACTIVO">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div id="espacioError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="btnCancelarEspacio" class="flex-1 btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cancelar</button>
+            <button type="submit" class="flex-1 btn-primary text-white text-sm font-semibold rounded-xl px-3 py-2.5">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: crear/editar persona (panel admin) -->
+    <div id="modalPersona" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-md p-7 max-h-[90vh] overflow-y-auto">
+        <h3 id="personaModalTitulo" class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>👤</span> Nueva persona</h3>
+        <form id="formPersona" class="space-y-3">
+          <div class="grid grid-cols-2 gap-2">
+            <input id="pFirstName" type="text" placeholder="Nombre" required class="input-field" />
+            <input id="pLastName" type="text" placeholder="Apellido" required class="input-field" />
+          </div>
+          <input id="pMiddleName" type="text" placeholder="Segundo nombre (opcional)" class="input-field" />
+          <div class="grid grid-cols-2 gap-2">
+            <input id="pDni" type="text" placeholder="Cédula" required class="input-field" />
+            <input id="pPhone" type="text" placeholder="Teléfono (opcional)" class="input-field" />
+          </div>
+          <input id="pEmail" type="email" placeholder="Email" required class="input-field" />
+          <input id="pAddress" type="text" placeholder="Dirección (opcional)" class="input-field" />
+          <div id="personaError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="btnCancelarPersona" class="flex-1 btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cancelar</button>
+            <button type="submit" class="flex-1 btn-primary text-white text-sm font-semibold rounded-xl px-3 py-2.5">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: crear login para una persona -->
+    <div id="modalCrearLogin" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-sm p-7">
+        <h3 class="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2"><span>🔑</span> Crear cuenta de acceso</h3>
+        <p class="text-xs text-slate-500 mb-4">El usuario se genera automáticamente a partir del nombre; solo se define la contraseña.</p>
+        <form id="formLogin2" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+            <input id="login2Password" type="password" required minlength="6" class="input-field" />
+          </div>
+          <div id="login2Error" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="btnCancelarLogin2" class="flex-1 btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cancelar</button>
+            <button type="submit" class="flex-1 btn-primary text-white text-sm font-semibold rounded-xl px-3 py-2.5">Crear cuenta</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: gestionar roles de una persona -->
+    <div id="modalRoles" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-sm p-7">
+        <h3 id="rolesModalTitulo" class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>🛡️</span> Roles</h3>
+        <div id="rolesActuales" class="mb-4"></div>
+        <div class="flex gap-2 items-end">
+          <div class="flex-1">
+            <label class="block text-xs font-medium text-slate-700 mb-1">Agregar rol</label>
+            <select id="rolNuevoSelect" class="input-field-sm w-full"></select>
+          </div>
+          <button type="button" id="btnAgregarRol" class="btn-primary text-white text-sm font-semibold rounded-xl px-3 py-2">Agregar</button>
+        </div>
+        <div id="rolesError" class="hidden mt-3 text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+        <div class="pt-4">
+          <button type="button" id="btnCerrarRoles" class="w-full btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: reservar espacio (rol cliente) -->
+    <div id="modalReservar" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+      <div class="modal-panel card-surface shadow-2xl w-full max-w-sm p-7">
+        <h3 class="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2"><span>🅿️</span> Reservar espacio</h3>
+        <p class="text-xs text-slate-500 mb-4">La reserva es para hoy, con al menos 1 hora de anticipación. Si no te presentas hasta 10 minutos después de la hora elegida, el espacio se libera automáticamente.</p>
+        <form id="formReservar" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Hora de llegada</label>
+            <input id="reservarHora" type="time" required class="input-field accent-violet" />
+          </div>
+          <div id="reservarError" class="hidden text-sm bg-red-50 text-red-700 ring-1 ring-red-200 rounded-xl px-3 py-2"></div>
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="btnCancelarReservar" class="flex-1 btn-secondary text-sm font-semibold rounded-xl px-3 py-2.5">Cancelar</button>
+            <button type="submit" class="flex-1 btn-violet text-white text-sm font-semibold rounded-xl px-3 py-2.5">Reservar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

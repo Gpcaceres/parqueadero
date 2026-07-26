@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: personas
+  namespace: parqueadero-buestan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: personas
+  template:
+    metadata:
+      labels:
+        app: personas
+    spec:
+      # Reemplaza a "depends_on: rabbitmq: condition: service_healthy" de
+      # docker-compose: sin esto, el proceso Node se cae con una excepción no
+      # capturada si RabbitMQ todavía no acepta conexiones al arrancar
+      # (ver EventPublisher), entrando en CrashLoopBackOff en vez de esperar.
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z rabbitmq 5672; do echo esperando rabbitmq; sleep 2; done"]
+      containers:
+        - name: personas
+          image: personas:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          env:
+            - name: NODE_ENV
+              value: "docker"
+            - name: PORT
+              value: "3001"
+            - name: DB_HOST
+              value: "aws-1-us-west-2.pooler.supabase.com"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USUARIO
+              value: "postgres.wxjxviqtqyrzflxaidur"
+            - name: DB_CONTRASENA
+              valueFrom:
+                secretKeyRef: { name: parqueadero-secrets, key: SUPABASE_DB_PASSWORD }
+            - name: DB_NOMBRE
+              value: "personas_db"
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: "guest"
+            - name: RABBITMQ_PASS
+              value: "guest"
+            - name: RABBITMQ_EXCHANGE
+              value: "audit_exchange"
+            - name: RABBITMQ_ROUTING_KEY
+              value: "audit.event"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: parqueadero-secrets, key: JWT_SECRET }
+          # Misma ruta que ya usa el healthcheck de docker-compose.yml.
+          readinessProbe:
+            httpGet: { path: /, port: 3001 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet: { path: /, port: 3001 }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits: { memory: "256Mi", cpu: "200m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: personas
+  namespace: parqueadero-buestan
+spec:
+  selector:
+    app: personas
+  ports:
+    - port: 3001
+      targetPort: 3001

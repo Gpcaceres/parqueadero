@@ -1,0 +1,123 @@
+# Mismo contenido que kong-gateway/setup-kong.sh (ya usa solo sintaxis POSIX,
+# corre igual bajo "sh" en la imagen curlimages/curl -- docker-compose ya lo
+# invoca así: "sh /setup.sh", ignorando el shebang bash del archivo). Si se
+# edita kong-gateway/setup-kong.sh, hay que reflejar el cambio aquí también.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-setup-script
+  namespace: parqueadero
+data:
+  setup-kong.sh: |
+    KONG_ADMIN="${KONG_ADMIN:-http://localhost:8001}"
+
+    echo "Configurando Kong Gateway..."
+    sleep 2
+
+    echo "Limpiando configuracion anterior..."
+    curl -s "$KONG_ADMIN/routes" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | while read id; do
+      curl -s -X DELETE "$KONG_ADMIN/routes/$id" > /dev/null
+    done
+
+    echo "Registrando Asignacion y Trazabilidad..."
+    curl -s -X POST "$KONG_ADMIN/services" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "asignacion-service", "url": "http://asignacion-trazabilidad:3002"}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/asignacion-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "asignacion-api", "paths": ["/api/asignaciones"], "strip_path": false}' > /dev/null
+
+    echo "Registrando Vehiculos..."
+    curl -s -X POST "$KONG_ADMIN/services" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "vehiculos-service", "url": "http://vehiculos:3000"}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/vehiculos-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "vehiculos-api", "paths": ["/vehiculos"], "strip_path": false}' > /dev/null
+
+    echo "Registrando Personas..."
+    curl -s -X POST "$KONG_ADMIN/services" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "personas-service", "url": "http://personas:3001"}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "personas-api", "paths": ["/personas"], "strip_path": false}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "personas-auth-api", "paths": ["/auth"], "strip_path": false}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "personas-users-api", "paths": ["/users"], "strip_path": false}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "personas-roles-api", "paths": ["/roles"], "strip_path": false}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/personas-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "personas-user-role-api", "paths": ["/user-role"], "strip_path": false}' > /dev/null
+
+    echo "Registrando Zonas..."
+    curl -s -X POST "$KONG_ADMIN/services" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "zonas-service", "url": "http://zonas:8080"}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/zonas-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "zonas-api", "paths": ["/api/v1/zonas"], "strip_path": false}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/zonas-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "zonas-espacios-api", "paths": ["/api/v1/espacios"], "strip_path": false}' > /dev/null
+
+    echo "Registrando Tickets..."
+    curl -s -X POST "$KONG_ADMIN/services" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "tickets-service", "url": "http://ms-tickets:3003"}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "tickets-api", "paths": ["/tickets"], "strip_path": false}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "reservas-api", "paths": ["/reservas"], "strip_path": false}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "tickets-sse", "paths": ["/sse"], "strip_path": false, "request_buffering": false, "response_buffering": false}' > /dev/null
+
+    echo "Registrando Auditoria..."
+    curl -s -X POST "$KONG_ADMIN/services" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "audit-service", "url": "http://ms-audit:3004"}' > /dev/null
+    curl -s -X POST "$KONG_ADMIN/services/audit-service/routes" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "audit-api", "paths": ["/audit"], "strip_path": false}' > /dev/null
+
+    echo "Agregando CORS a todos los servicios..."
+    for service in asignacion-service vehiculos-service personas-service zonas-service tickets-service audit-service; do
+      curl -s -X POST "$KONG_ADMIN/services/$service/plugins" \
+        -H "Content-Type: application/json" \
+        -d '{"name": "cors", "config": {"origins": ["*"]}}' > /dev/null 2>&1
+    done
+
+    echo "Kong Gateway configurado exitosamente!"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-setup
+  namespace: parqueadero
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: kong-setup
+          image: curlimages/curl:latest
+          env:
+            - name: KONG_ADMIN
+              value: "http://kong:8001"
+          command: ["/bin/sh", "-c", "sleep 10 && sh /scripts/setup-kong.sh"]
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: kong-setup-script

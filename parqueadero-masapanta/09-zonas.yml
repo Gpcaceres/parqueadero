@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zonas
+  namespace: parqueadero-masapanta
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zonas
+  template:
+    metadata:
+      labels:
+        app: zonas
+    spec:
+      containers:
+        - name: zonas
+          image: zonas:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/zonas_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "postgres.wxjxviqtqyrzflxaidur"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: parqueadero-secrets, key: SUPABASE_DB_PASSWORD }
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "docker"
+            - name: SPRING_RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: SPRING_RABBITMQ_PORT
+              value: "5672"
+            - name: SPRING_RABBITMQ_USERNAME
+              value: "guest"
+            - name: SPRING_RABBITMQ_PASSWORD
+              value: "guest"
+            - name: AUDIT_RABBITMQ_EXCHANGE
+              value: "audit_exchange"
+            - name: AUDIT_RABBITMQ_ROUTING_KEY
+              value: "audit.event"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: parqueadero-secrets, key: JWT_SECRET }
+          # Misma ruta que ya usa el healthcheck de docker-compose.yml
+          # (Spring Boot Actuator, ya habilitado).
+          # Spring Boot + Hibernate + conexión a Supabase por internet tarda
+          # bastante más en arrancar que en docker-compose local -- con poco
+          # margen aquí el livenessProbe mataba el pod antes de que terminara
+          # de iniciar, generando un CrashLoopBackOff que nunca era un error
+          # real de la app.
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            initialDelaySeconds: 45
+            periodSeconds: 15
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            initialDelaySeconds: 75
+            periodSeconds: 20
+            failureThreshold: 5
+          resources:
+            requests: { memory: "256Mi", cpu: "150m" }
+            limits: { memory: "512Mi", cpu: "400m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zonas
+  namespace: parqueadero-masapanta
+spec:
+  selector:
+    app: zonas
+  ports:
+    - port: 8080
+      targetPort: 8080

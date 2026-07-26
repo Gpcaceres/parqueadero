@@ -164,6 +164,15 @@ curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
     "strip_path": false
   }' > /dev/null
 
+# Ruta de reservas (mismo servicio tickets-service, ver ms-tickets/src/reservas)
+curl -s -X POST "$KONG_ADMIN/services/tickets-service/routes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "reservas-api",
+    "paths": ["/reservas"],
+    "strip_path": false
+  }' > /dev/null
+
 # Ruta SSE (dashboard de monitoreo de espacios en tiempo real). Kong bufferea
 # las respuestas por defecto (response_buffering), lo que rompe un stream que
 # nunca termina: hay que desactivarlo para que los eventos lleguen en vivo.
