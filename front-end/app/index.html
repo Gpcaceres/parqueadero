@@ -89,6 +89,26 @@
       <!-- Tab: Tickets -->
       <section data-tab-panel="tickets" class="hidden space-y-4 fade-in">
         <h2 id="ticketsTitulo" class="text-xl font-bold text-slate-800 flex items-center gap-2"><span>🎫</span> Tickets</h2>
+
+        <!-- Filtro por fecha + reporte (solo empleados, ver tickets.js) -->
+        <div id="ticketsFiltroFecha" class="hidden card-surface p-4 flex flex-wrap items-end gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Desde</label>
+            <input id="ticketsFechaDesde" type="date" class="input-field-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Hasta</label>
+            <input id="ticketsFechaHasta" type="date" class="input-field-sm" />
+          </div>
+          <button type="button" id="btnFiltrarTickets" class="btn-primary text-white text-sm font-semibold rounded-xl px-4 py-2">Filtrar</button>
+          <button type="button" id="btnLimpiarFiltroTickets" class="btn-secondary text-sm font-semibold rounded-xl px-4 py-2">Quitar filtro</button>
+          <a id="btnReporteTickets" href="#" target="_blank"
+             class="ml-auto text-sm font-semibold bg-slate-700 hover:bg-slate-800 text-white rounded-xl px-4 py-2 transition-colors pointer-events-none opacity-50">
+            📄 Generar reporte PDF
+          </a>
+          <p id="ticketsFiltroInfo" class="hidden w-full text-xs text-slate-500"></p>
+        </div>
+
         <div id="ticketsEstadisticas" class="hidden grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
         <div class="card-surface overflow-x-auto">
           <table class="w-full text-left table-modern">
@@ -113,9 +133,13 @@
       <section data-tab-panel="vehiculos" class="hidden space-y-4 fade-in">
         <div class="flex items-center justify-between flex-wrap gap-2">
           <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><span>🚙</span> Vehículos</h2>
-          <button id="btnNuevoVehiculo" class="btn-primary text-white text-sm font-semibold rounded-xl px-4 py-2.5">
-            + Nuevo vehículo
-          </button>
+          <div class="flex items-center gap-2 flex-wrap">
+            <input id="buscarVehiculoPlaca" type="text" placeholder="Buscar por placa..."
+              class="input-field-sm w-48" />
+            <button id="btnNuevoVehiculo" class="btn-primary text-white text-sm font-semibold rounded-xl px-4 py-2.5">
+              + Nuevo vehículo
+            </button>
+          </div>
         </div>
         <div class="card-surface overflow-x-auto">
           <table class="w-full text-left table-modern">
@@ -150,9 +174,13 @@
       <section data-tab-panel="usuarios" class="hidden space-y-4 fade-in">
         <div class="flex items-center justify-between flex-wrap gap-2">
           <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><span>👥</span> Personas y Usuarios</h2>
-          <button id="btnNuevaPersonaAdmin" class="btn-primary text-white text-sm font-semibold rounded-xl px-4 py-2.5">
-            + Nueva persona
-          </button>
+          <div class="flex items-center gap-2 flex-wrap">
+            <input id="buscarPersonaCedula" type="text" placeholder="Buscar por cédula..."
+              class="input-field-sm w-48" />
+            <button id="btnNuevaPersonaAdmin" class="btn-primary text-white text-sm font-semibold rounded-xl px-4 py-2.5">
+              + Nueva persona
+            </button>
+          </div>
         </div>
         <div class="card-surface overflow-x-auto">
           <table class="w-full text-left table-modern">

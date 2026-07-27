@@ -25,12 +25,12 @@ Ninguna prueba se ejecutó contra mocks del sistema completo: todo corrió contr
 |---|---|---|---|---|
 | `personas` | Jest | 3 suites falladas / 1 pasada (2/3 tests) | **4/4 suites, 8/8 tests** | ✅ Corregido |
 | `vehiculos` | Jest | 2 suites falladas / 1 pasada (1/3 tests) | **3/3 suites, 3/3 tests** | ✅ Corregido |
-| `ms-tickets` | Jest | 2 suites falladas / 1 pasada (2/2 tests que sí corrían) | **3/3 suites, 14/14 tests** | ✅ Corregido |
+| `ms-tickets` | Jest | 2 suites falladas / 1 pasada (2/2 tests que sí corrían) | **3/3 suites, 19/19 tests** | ✅ Corregido (+4 tests nuevos: recibo PDF, filtro por fecha, reporte) |
 | `ms-audit` | Jest | 1/1 suite (solo smoke test, 0% de la lógica real) | **3/3 suites, 9/9 tests** (+2 archivos de test nuevos) | ✅ Ampliado |
 | `asignacion-trazabilidad` | Jest | No corría (conflicto de configuración) | **1/1 suite, 8/8 tests** | ✅ Corregido |
 | `zonas` | JUnit 5 + Mockito | 1 smoke test (`contextLoads`), sin lógica de negocio probada | **6/6 tests nuevos** de `EspacioServicioImplTest` (el smoke test preexistente sigue fallando, ver nota) | ✅ Ampliado |
 
-**Total: 48 pruebas unitarias pasando** (antes: 5 de ~15 pasaban realmente, y dos servicios ni siquiera lograban ejecutar sus suites).
+**Total: 53 pruebas unitarias pasando** (antes: 5 de ~15 pasaban realmente, y dos servicios ni siquiera lograban ejecutar sus suites).
 
 ### 2.2 Defectos encontrados y corregidos en el arnés de pruebas
 
@@ -124,6 +124,54 @@ Suite de tests de `vehiculos` (3/3) re-ejecutada tras el cambio: sigue en verde.
 ### D2 — `personas`: validación de cédula ecuatoriana funciona correctamente (no es un defecto, se documenta como hallazgo positivo)
 
 Al probar la creación de una persona con un DNI arbitrario (`9999999999`), la API respondió correctamente `HTTP 400` con el mensaje `"El número de cédula ecuatoriana no es válido"`. Esto confirma que el validador personalizado (`EsCedulaValidaConstraint`, algoritmo módulo 10 oficial del Registro Civil ecuatoriano) funciona como se espera. Se documenta aquí porque inicialmente se interpretó como un bloqueo de la prueba, pero al usar una cédula con dígito verificador válido (`1712345675`, generada con el mismo algoritmo) la creación se completó sin problemas.
+
+---
+
+## 4.1 Funcionalidad nueva: recibo en PDF al registrar la salida
+
+Se agregó la generación de un recibo en PDF en `ms-tickets`, ofrecido automáticamente en el frontend apenas se confirma la salida de un vehículo.
+
+- **`GET /tickets/:id/recibo`** (nuevo): genera el PDF al vuelo (no se almacena) con `pdfkit`, enriquecido con el código del espacio (`ZoneIntegrationService.obtenerCodigo`, nuevo) y el nombre del cliente (`PersonaIntegrationService.obtenerNombreCompleto`, ya existente). Incluye: ticket, espacio, vehículo, cliente, fecha de ingreso/salida, duración, tipo de tarifa y el monto (pagado si ya hay salida, "en curso" si el ticket sigue activo).
+- **Frontend**: `ticket-modal.js#registrarSalida` abre el PDF en una pestaña nueva apenas se confirma la salida; además se agregó un botón **"Recibo"** en la tabla de Tickets para reimprimir el de cualquier ticket, sin importar su estado.
+
+**Prueba realizada** (contra el clúster real, `parqueadero-caceres`): se creó un ticket, se registró su salida, y se descargó el PDF vía `curl` a través de Kong.
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="recibo-41f3c93b.pdf"
+```
+
+Contenido extraído del PDF (`pdftotext -enc UTF-8`), confirmando datos correctos y acentos bien codificados:
+```
+RECIBO DE PARQUEADERO
+Parqueadero ESPE - Sistema Inteligente de Gestión
+Ticket: 41f3c93b-... Espacio: ZON3-4 Vehículo: REC-0001 (Auto) Cliente: Test Informe
+Ingreso: 27/7/2026, 00:49:22 Salida: 27/7/2026, 00:49:24 Duración: 00:00:02 Tarifa: Por hora o fracción
+TOTAL PAGADO
+$0.50
+```
+
+Se agregó `tickets.controller.spec.ts` → `describe('recibo')`: verifica que el endpoint arma un `StreamableFile` con `type: application/pdf` y el nombre de archivo esperado (suite completa: 15/15).
+
+---
+
+## 4.2 Funcionalidad nueva: filtro de tickets por fecha y reporte PDF consolidado
+
+Se agregó a la sección "Todos los tickets" (vista de empleados) un filtro por rango de fechas y la generación de un reporte en PDF de ese mismo rango.
+
+- **`TicketsService.findAll(desde?, hasta?)`**: ahora filtra por `fecha_hora_ingreso` usando `Between`/`MoreThanOrEqual`/`LessThanOrEqual` de TypeORM; `hasta` se lleva al final del día (`23:59:59.999`) para incluir todo lo ocurrido ese día. `GET /tickets` acepta `?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` opcionales (sin filtro si no se envían, compatible con el comportamiento anterior).
+- **`GET /tickets/reporte?desde=...&hasta=...`** (nuevo, ambos parámetros obligatorios → `400` si falta alguno): genera un PDF con la tabla de tickets del período (espacio, vehículo, ingreso, salida, tarifa, estado, recaudado) y un resumen (total de tickets, conteo por estado, total recaudado). Resuelve el código de cada espacio con una sola llamada por espacio **único** en el rango, no una por ticket, para no multiplicar peticiones a `zonas` en reportes grandes.
+- **Frontend**: dos campos de fecha + botones "Filtrar"/"Quitar filtro" (recargan la tabla), y un botón "Generar reporte PDF" que se habilita solo cuando ambas fechas están elegidas.
+
+### Defectos de layout encontrados y corregidos mediante verificación visual
+
+La extracción de texto (`pdftotext`) del primer PDF de prueba no mostraba señales claras de error, pero **al rasterizar el PDF a imagen y revisarlo visualmente** (`pdftoppm` + inspección de la imagen) aparecieron dos defectos reales en `ReciboService.generarReportePdf`, ambos causados por un malentendido sobre el manejo del cursor de `pdfkit`:
+
+1. **Encabezado de la tabla invisible**: `doc.rect(...).fill(...)` dibuja el rectángulo pero, a diferencia de `doc.text()`, **no avanza `doc.y`** — el texto blanco del encabezado se calculaba con un `doc.y` que ya no correspondía a la posición del rectángulo recién dibujado, quedando fuera de él (blanco sobre blanco, invisible). Corregido guardando la posición **antes** de dibujar el rectángulo y avanzando el cursor a mano después.
+2. **Resumen final cortado en líneas de 4-5 caracteres** ("Total de" / "tickets: 3", "Total rec" / "audado:" / "$1.50"): `doc.x` quedaba heredado de la última celda de la tabla (columna "Recaudado", `x=500`), así que el ancho de ajuste de línea por defecto de la siguiente llamada `doc.text()` sin posición explícita se calculaba como `595 - 500 - 40 ≈ 55pt` (el ancho real de esa columna), en vez del ancho completo de la página. Corregido reseteando `doc.x = 40` explícitamente antes de dibujar el resumen.
+
+Ambos se confirmaron corregidos rasterizando el PDF de nuevo tras el fix y comparando visualmente (antes/después). Esto refuerza que, para features que generan documentos, la verificación con `curl` + validar el `Content-Type`/tamaño del archivo **no alcanza** — hace falta inspeccionar el contenido renderizado real.
 
 ---
 

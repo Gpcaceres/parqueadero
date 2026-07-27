@@ -108,6 +108,32 @@ describe('TicketsService', () => {
     });
   });
 
+  describe('findAll con filtro de fechas', () => {
+    it('sin filtro, no arma cláusula "where"', async () => {
+      mockRepository.find.mockResolvedValue([]);
+
+      await service.findAll();
+
+      expect(mockRepository.find).toHaveBeenCalledWith({
+        where: undefined,
+        order: { created_at: 'DESC' },
+      });
+    });
+
+    it('con "desde" y "hasta", filtra por fecha_hora_ingreso entre ambas (hasta incluye todo el día)', async () => {
+      mockRepository.find.mockResolvedValue([]);
+
+      await service.findAll('2026-01-01', '2026-01-31');
+
+      const llamada = mockRepository.find.mock.calls[0][0];
+      const operador = llamada.where.fecha_hora_ingreso;
+      expect(operador.type).toBe('between');
+      expect(operador.value[0]).toEqual(new Date('2026-01-01'));
+      expect(operador.value[1].getHours()).toBe(23);
+      expect(operador.value[1].getMinutes()).toBe(59);
+    });
+  });
+
   describe('findOne', () => {
     it('should return a ticket by id', async () => {
       const ticket = mockTicket();

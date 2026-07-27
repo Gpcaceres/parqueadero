@@ -100,6 +100,8 @@ Kong tiene su propia base de datos PostgreSQL dedicada (no compartida con las ap
 - **API Gateway (Kong)**: todas las rutas públicas pasan por `localhost:8000`; Kong agrega CORS a los 6 servicios y desactiva el buffering en la ruta `/sse` para que el stream llegue en vivo.
 - **Kubernetes listo para producción de prueba**: manifiestos completos en `deployment/`, con `initContainers` esperando dependencias, probes de salud, Secrets separados de la plantilla versionada, y un Job que configura Kong automáticamente al desplegar.
 - **Reservas con expiración automática**: un cliente reserva un espacio con al menos 1h de anticipación; si no se presenta 10 minutos después de la hora reservada, el espacio se libera solo (`@Interval` en `ms-tickets`).
+- **Recibo en PDF**: al registrar la salida de un vehículo, `ms-tickets` genera un recibo en PDF (`GET /tickets/:id/recibo`, con `pdfkit`) que se abre automáticamente en el navegador; también se puede reimprimir desde la pestaña de Tickets para cualquier ticket.
+- **Filtro de tickets por fecha y reporte PDF**: la vista "Todos los tickets" permite filtrar por rango de fechas (`GET /tickets?desde=...&hasta=...`) y generar un reporte consolidado en PDF de ese período (`GET /tickets/reporte?desde=...&hasta=...`), con el detalle de cada ticket y totales (cantidad por estado, monto recaudado).
 
 ---
 
@@ -116,6 +118,74 @@ Kong tiene su propia base de datos PostgreSQL dedicada (no compartida con las ap
 ### Desarrollo manual sin Docker (opcional, por servicio)
 - Node.js 20+, npm
 - Java 21+, Maven 3.9+ (solo para `zonas`)
+
+### Instalación de las herramientas desde cero
+
+Si la máquina no tiene nada instalado todavía:
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+```powershell
+# Docker Desktop (incluye Docker Compose y el motor de contenedores)
+winget install -e --id Docker.DockerDesktop
+# Reiniciar la sesión/PC si lo pide, y abrir Docker Desktop al menos una vez
+# para que termine de inicializar el motor.
+
+# Minikube
+winget install -e --id Kubernetes.minikube
+
+# kubectl
+winget install -e --id Kubernetes.kubectl
+```
+
+Sin `winget`, los instaladores oficiales están en:
+[Docker Desktop](https://docs.docker.com/desktop/install/windows-install/) ·
+[Minikube](https://minikube.sigs.k8s.io/docs/start/) ·
+[kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/)
+
+</details>
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+```bash
+# Con Homebrew (https://brew.sh)
+brew install --cask docker      # Docker Desktop; abrirlo una vez desde Aplicaciones
+brew install minikube kubectl
+```
+
+</details>
+
+<details>
+<summary><strong>Linux (Ubuntu/Debian)</strong></summary>
+
+```bash
+# Docker Engine + Compose plugin
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker "$USER"   # cerrar sesión y volver a entrar para que aplique
+
+# Minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install kubectl /usr/local/bin/kubectl
+```
+
+</details>
+
+Verificar que todo quedó instalado:
+
+```bash
+docker --version
+docker compose version
+minikube version
+kubectl version --client
+```
+
+> La opción Docker Compose (sección siguiente) **no necesita Minikube ni kubectl** — esos dos solo hacen falta para la opción Kubernetes.
 
 ---
 
@@ -222,6 +292,14 @@ curl -X POST http://localhost:8000/tickets \
 
 # Suscribirse al stream de espacios en tiempo real
 curl -N http://localhost:8000/sse/espacios
+
+# Registrar salida y descargar el recibo en PDF
+curl -X PATCH http://localhost:8000/tickets/<id_ticket>/salida -H "Authorization: Bearer <token>"
+curl -o recibo.pdf http://localhost:8000/tickets/<id_ticket>/recibo
+
+# Filtrar tickets por fecha y descargar el reporte del período
+curl "http://localhost:8000/tickets?desde=2026-07-01&hasta=2026-07-31" -H "Authorization: Bearer <token>"
+curl -o reporte.pdf "http://localhost:8000/tickets/reporte?desde=2026-07-01&hasta=2026-07-31" -H "Authorization: Bearer <token>"
 ```
 
 ---

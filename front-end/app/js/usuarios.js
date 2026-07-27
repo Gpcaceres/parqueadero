@@ -66,6 +66,27 @@ function filaPersona(p) {
     </tr>`;
 }
 
+function renderTabla(lista) {
+  const tbody = document.getElementById("usuariosTbody");
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500">${
+      personasCache.length === 0 ? "Sin personas registradas" : "Sin resultados para esa cédula"
+    }</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(filaPersona).join("");
+}
+
+// Filtro por cédula (contiene) sobre lo ya cargado en memoria -- no hace
+// falta volver a pedirle nada al backend.
+function aplicarFiltroCedula() {
+  const termino = document.getElementById("buscarPersonaCedula").value.trim();
+  const filtradas = termino
+    ? personasCache.filter((p) => (p.dni || "").includes(termino))
+    : personasCache;
+  renderTabla(filtradas);
+}
+
 async function recargarTabla() {
   const tbody = document.getElementById("usuariosTbody");
   tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500">Cargando…</td></tr>`;
@@ -81,10 +102,7 @@ async function recargarTabla() {
 
   await Promise.all(personasCache.map((p) => cargarRolesDe(p.id_persona)));
 
-  tbody.innerHTML =
-    personasCache.length === 0
-      ? `<tr><td colspan="6" class="text-center py-6 text-slate-500">Sin personas registradas</td></tr>`
-      : personasCache.map(filaPersona).join("");
+  aplicarFiltroCedula();
 }
 
 // ---------- Modal: nueva/editar persona ----------
@@ -313,6 +331,7 @@ function wireUsuarios() {
   document.getElementById("rolesActuales").addEventListener("click", onRolesModalClick);
 
   document.getElementById("usuariosTbody").addEventListener("click", onTablaClick);
+  document.getElementById("buscarPersonaCedula").addEventListener("input", aplicarFiltroCedula);
 }
 
 wireUsuarios();

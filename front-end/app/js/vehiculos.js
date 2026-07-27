@@ -33,13 +33,31 @@ function filaVehiculo(v) {
 }
 
 let vehiculosCache = [];
+
+function renderTabla(lista) {
+  const tbody = document.getElementById("vehiculosTbody");
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500">${
+      vehiculosCache.length === 0 ? "Sin vehículos registrados" : "Sin resultados para esa placa"
+    }</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(filaVehiculo).join("");
+}
+
+// Filtro por placa (contiene, sin distinguir mayúsculas/minúsculas) sobre lo
+// ya cargado en memoria -- no hace falta volver a pedirle nada al backend.
+function aplicarFiltroPlaca() {
+  const termino = document.getElementById("buscarVehiculoPlaca").value.trim().toUpperCase();
+  const filtrados = termino
+    ? vehiculosCache.filter((v) => (v.placa || "").toUpperCase().includes(termino))
+    : vehiculosCache;
+  renderTabla(filtrados);
+}
+
 async function recargarTabla() {
   vehiculosCache = (await VehiculosApi.getAll()) || [];
-  const tbody = document.getElementById("vehiculosTbody");
-  tbody.innerHTML =
-    vehiculosCache.length === 0
-      ? `<tr><td colspan="7" class="text-center py-6 text-slate-500">Sin vehículos registrados</td></tr>`
-      : vehiculosCache.map(filaVehiculo).join("");
+  aplicarFiltroPlaca();
 }
 
 function resetForm() {
@@ -195,6 +213,7 @@ function wireModalVehiculo() {
   document.getElementById("formVehiculo").addEventListener("submit", onSubmit);
   document.getElementById("vehiculoTipo").addEventListener("change", (e) => mostrarCamposPorTipo(e.target.value));
   document.getElementById("vehiculosTbody").addEventListener("click", onTablaClick);
+  document.getElementById("buscarVehiculoPlaca").addEventListener("input", aplicarFiltroPlaca);
 }
 
 wireModalVehiculo();

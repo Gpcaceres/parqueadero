@@ -1,4 +1,5 @@
 import { PersonasApi, VehiculosApi, TicketsApi } from "./api.js";
+import { EP } from "./config.js";
 import { openModal, closeModal, toast, escapeHtml, TARIFAS, formatearMoneda } from "./ui.js";
 import { hasAnyRole } from "./session.js";
 import { abrirModalNuevoVehiculo } from "./vehiculos.js";
@@ -248,6 +249,10 @@ export async function registrarSalida(idTicket) {
   try {
     const ticket = await TicketsApi.registrarSalida(idTicket);
     toast(`Salida registrada. Cobro: ${formatearMoneda(ticket.valor_recaudado)}`, "exito");
+    // Recibo en PDF (ver TicketsController#recibo) -- se abre en una pestaña
+    // nueva apenas se confirma la salida, sin bloquear el flujo si el
+    // navegador tiene bloqueado el popup (la salida ya quedó registrada).
+    window.open(`${EP.tickets}/${idTicket}/recibo`, "_blank");
     return true;
   } catch (err) {
     toast(err.message, "error");

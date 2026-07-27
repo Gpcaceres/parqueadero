@@ -10,6 +10,8 @@ import {
   Query,
   Req,
   UseGuards,
+  StreamableFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { TicketsService } from './tickets.service';
@@ -24,6 +26,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { PersonaIntegrationService } from './persona-integration.service';
+import { ReciboService } from './recibo.service';
 
 // La IP puede llegar como IPv4 mapeada a IPv6 (::ffff:172.18.0.5) cuando
 // Node corre en Docker; se normaliza a IPv4 puro para pasar la validación
@@ -39,6 +42,7 @@ export class TicketsController {
   constructor(
     private readonly ticketsService: TicketsService,
     private readonly personaIntegrationService: PersonaIntegrationService,
+    private readonly reciboService: ReciboService,
   ) {}
 
   /**
@@ -72,15 +76,34 @@ export class TicketsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todos los tickets' })
-  async findAll() {
-    return await this.ticketsService.findAll();
+  @ApiOperation({ summary: 'Obtener todos los tickets, opcionalmente filtrados por fecha de ingreso' })
+  async findAll(@Query('desde') desde?: string, @Query('hasta') hasta?: string) {
+    return await this.ticketsService.findAll(desde, hasta);
   }
 
   @Get('estadisticas')
   @ApiOperation({ summary: 'Obtener estadísticas de tickets' })
   async obtenerEstadisticas() {
     return await this.ticketsService.obtenerEstadisticas();
+  }
+
+  // Mismo filtro por fecha que findAll() -- el reporte es, ni más ni menos,
+  // ese mismo listado armado como PDF para imprimir/archivar.
+  @Get('reporte')
+  @ApiOperation({ summary: 'Generar un reporte en PDF de los tickets entre dos fechas' })
+  async reporte(
+    @Query('desde') desde: string,
+    @Query('hasta') hasta: string,
+  ): Promise<StreamableFile> {
+    if (!desde || !hasta) {
+      throw new BadRequestException('Se requieren los parámetros "desde" y "hasta" (YYYY-MM-DD)');
+    }
+    const tickets = await this.ticketsService.findAll(desde, hasta);
+    const pdf = await this.reciboService.generarReportePdf(tickets, desde, hasta);
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="reporte-tickets-${desde}_${hasta}.pdf"`,
+    });
   }
 
   @Get('espacio/:id_espacio')
@@ -108,6 +131,21 @@ export class TicketsController {
   @ApiOperation({ summary: 'Obtener un ticket por ID' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return await this.ticketsService.findOne(id);
+  }
+
+  // Recibo en PDF -- se ofrece para descargar apenas se registra la salida
+  // (ver registrarSalida() en el frontend, ticket-modal.js), pero también
+  // funciona para un ticket activo (sin salida), mostrando el cobro en curso.
+  // Sin guard adicional: mismo criterio que findOne, es una lectura.
+  @Get(':id/recibo')
+  @ApiOperation({ summary: 'Descargar el recibo del ticket en PDF' })
+  async recibo(@Param('id', ParseUUIDPipe) id: string): Promise<StreamableFile> {
+    const ticket = await this.ticketsService.findOne(id);
+    const pdf = await this.reciboService.generarPdf(ticket);
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="recibo-${ticket.id_ticket.slice(0, 8)}.pdf"`,
+    });
   }
 
   @Patch(':id')

@@ -8,6 +8,7 @@ import { Ticket } from './entities/ticket.entity';
 import { OptionalAuthGuard } from '../auth/optional-auth.guard';
 import { ZoneIntegrationService } from './zone-integration.service';
 import { PersonaIntegrationService } from './persona-integration.service';
+import { ReciboService } from './recibo.service';
 import { EventPublisher } from '../event-publisher.service';
 import { SseModule } from '../sse/sse.module';
 
@@ -26,6 +27,7 @@ import { SseModule } from '../sse/sse.module';
     OptionalAuthGuard,
     ZoneIntegrationService,
     PersonaIntegrationService,
+    ReciboService,
     EventPublisher,
   ],
   // ZoneIntegrationService y PersonaIntegrationService se exportan para que

@@ -4,6 +4,10 @@ Manifiestos numerados para que `kubectl apply -f deployment/` los aplique en
 el orden correcto (namespace → secrets → rabbitmq/kong-db → kong → los 6
 microservicios → frontend → ingress).
 
+> **Prerrequisito:** Docker, Minikube y kubectl instalados. Si la máquina no
+> los tiene, ver [instrucciones de instalación por sistema operativo](../README.md#instalación-de-las-herramientas-desde-cero)
+> en el README principal antes de continuar.
+
 ## 1. Generar el Secret real (no se versiona con valores reales)
 
 `02-secrets.yml` es una plantilla sin valores reales. Antes de aplicar, generar

@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { StreamableFile, BadRequestException } from '@nestjs/common';
 import { TicketsController } from './tickets.controller';
 import { TicketsService } from './tickets.service';
 import { PersonaIntegrationService } from './persona-integration.service';
+import { ReciboService } from './recibo.service';
 import { Ticket, EstadoTicket, TipoTarifa } from './entities/ticket.entity';
 import { OptionalAuthGuard } from '../auth/optional-auth.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -39,6 +41,7 @@ const mockRequest = (overrides: Record<string, any> = {}) => ({
 describe('TicketsController', () => {
   let controller: TicketsController;
   let service: TicketsService;
+  let reciboService: ReciboService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -65,6 +68,13 @@ describe('TicketsController', () => {
             obtenerNombreCompleto: jest.fn(),
           },
         },
+        {
+          provide: ReciboService,
+          useValue: {
+            generarPdf: jest.fn(),
+            generarReportePdf: jest.fn(),
+          },
+        },
       ],
     })
       .overrideGuard(OptionalAuthGuard)
@@ -77,6 +87,7 @@ describe('TicketsController', () => {
 
     controller = module.get<TicketsController>(TicketsController);
     service = module.get<TicketsService>(TicketsService);
+    reciboService = module.get<ReciboService>(ReciboService);
   });
 
   it('should be defined', () => {
@@ -127,6 +138,51 @@ describe('TicketsController', () => {
 
       expect(result).toEqual(ticket);
       expect(service.findOne).toHaveBeenCalledWith(ticket.id_ticket);
+    });
+  });
+
+  describe('recibo', () => {
+    it('should return the PDF as a StreamableFile with the right filename', async () => {
+      const ticket = mockTicket();
+      const pdfBuffer = Buffer.from('%PDF-1.4 contenido de prueba');
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(ticket);
+      jest.spyOn(reciboService, 'generarPdf').mockResolvedValue(pdfBuffer);
+
+      const result = await controller.recibo(ticket.id_ticket);
+
+      expect(reciboService.generarPdf).toHaveBeenCalledWith(ticket);
+      expect(result).toBeInstanceOf(StreamableFile);
+      expect(result.options.type).toBe('application/pdf');
+      expect(result.options.disposition).toContain(ticket.id_ticket.slice(0, 8));
+    });
+  });
+
+  describe('reporte', () => {
+    it('debe rechazar la petición si falta "desde" o "hasta"', async () => {
+      await expect(controller.reporte(undefined as any, '2026-01-31')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.reporte('2026-01-01', undefined as any)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(service.findAll).not.toHaveBeenCalled();
+    });
+
+    it('debe filtrar los tickets del período y devolver el PDF como StreamableFile', async () => {
+      const tickets = [mockTicket()];
+      const pdfBuffer = Buffer.from('%PDF-1.4 reporte de prueba');
+
+      jest.spyOn(service, 'findAll').mockResolvedValue(tickets);
+      jest.spyOn(reciboService, 'generarReportePdf').mockResolvedValue(pdfBuffer);
+
+      const result = await controller.reporte('2026-01-01', '2026-01-31');
+
+      expect(service.findAll).toHaveBeenCalledWith('2026-01-01', '2026-01-31');
+      expect(reciboService.generarReportePdf).toHaveBeenCalledWith(tickets, '2026-01-01', '2026-01-31');
+      expect(result).toBeInstanceOf(StreamableFile);
+      expect(result.options.type).toBe('application/pdf');
+      expect(result.options.disposition).toContain('2026-01-01_2026-01-31');
     });
   });
 

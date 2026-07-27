@@ -1,4 +1,5 @@
 import { TicketsApi, EspaciosApi } from "./api.js";
+import { EP } from "./config.js";
 import { getCurrentUser, isEmpleado } from "./session.js";
 import { formatDate, formatearMoneda, escapeHtml, BADGE_CLASS_POR_ESTADO } from "./ui.js";
 import { abrirModalAnular } from "./ticket-modal.js";
@@ -19,11 +20,17 @@ async function codigoEspacio(idEspacio) {
 }
 
 function filaTicket(ticket, codigo, conAcciones) {
-  const acciones =
+  const botonAnular =
     conAcciones && ticket.estado_ticket === "activo"
       ? `<button data-action="anular" data-ticket-id="${ticket.id_ticket}"
              class="text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 transition-colors">Anular</button>`
       : "";
+  // Mismo endpoint que abre solo al registrar la salida (ver
+  // ticket-modal.js#registrarSalida) -- aquí sirve para reimprimir el
+  // recibo de cualquier ticket, este o no ya pagado.
+  const botonRecibo = `<a href="${EP.tickets}/${ticket.id_ticket}/recibo" target="_blank"
+       class="text-xs font-semibold bg-slate-600 hover:bg-slate-700 text-white rounded-lg px-2.5 py-1 transition-colors">Recibo</a>`;
+  const acciones = `<div class="flex gap-2">${botonRecibo}${botonAnular}</div>`;
 
   return `
     <tr class="border-b border-slate-100">
@@ -75,17 +82,49 @@ async function renderTabla(tickets, conAcciones) {
   tbody.innerHTML = filas.join("");
 }
 
+// Habilita "Generar reporte" solo cuando hay un rango completo elegido, y
+// apunta al mismo período que se está filtrando en la tabla.
+function actualizarBotonReporte(desde, hasta) {
+  const boton = document.getElementById("btnReporteTickets");
+  if (desde && hasta) {
+    boton.href = TicketsApi.urlReporte(desde, hasta);
+    boton.classList.remove("pointer-events-none", "opacity-50");
+  } else {
+    boton.href = "#";
+    boton.classList.add("pointer-events-none", "opacity-50");
+  }
+}
+
+async function cargarConFiltro() {
+  const desde = document.getElementById("ticketsFechaDesde").value || undefined;
+  const hasta = document.getElementById("ticketsFechaHasta").value || undefined;
+  const info = document.getElementById("ticketsFiltroInfo");
+
+  actualizarBotonReporte(desde, hasta);
+
+  const tickets = await TicketsApi.getAll(desde, hasta);
+  await renderTabla(tickets, true);
+
+  if (desde || hasta) {
+    info.textContent = `Mostrando ${tickets.length} ticket${tickets.length === 1 ? "" : "s"} entre ${desde || "el inicio"} y ${hasta || "hoy"}.`;
+    info.classList.remove("hidden");
+  } else {
+    info.classList.add("hidden");
+  }
+}
+
 export async function cargarTicketsTab() {
   const titulo = document.getElementById("ticketsTitulo");
   const empleado = isEmpleado();
 
   if (empleado) {
     titulo.textContent = "Todos los tickets";
+    document.getElementById("ticketsFiltroFecha").classList.remove("hidden");
     await renderEstadisticas();
-    const tickets = await TicketsApi.getAll();
-    await renderTabla(tickets, true);
+    await cargarConFiltro();
   } else {
     titulo.textContent = "Mis tickets";
+    document.getElementById("ticketsFiltroFecha").classList.add("hidden");
     document.getElementById("ticketsEstadisticas").classList.add("hidden");
     const tickets = await TicketsApi.getByUser(getCurrentUser().id_user);
     await renderTabla(tickets, false);
@@ -99,6 +138,13 @@ export function initTicketsTab() {
     document.getElementById("ticketsTbody").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-action='anular']");
       if (btn) abrirModalAnular(btn.dataset.ticketId, () => cargarTicketsTab());
+    });
+
+    document.getElementById("btnFiltrarTickets").addEventListener("click", cargarConFiltro);
+    document.getElementById("btnLimpiarFiltroTickets").addEventListener("click", () => {
+      document.getElementById("ticketsFechaDesde").value = "";
+      document.getElementById("ticketsFechaHasta").value = "";
+      cargarConFiltro();
     });
   }
   cargarTicketsTab();

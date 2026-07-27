@@ -126,8 +126,18 @@ export const VehiculosApi = {
   remove: (id) => apiFetch(`${EP.vehiculos}/${id}`, { method: "DELETE" }),
 };
 
+// "desde"/"hasta" son opcionales (YYYY-MM-DD) -- filtran por fecha de
+// ingreso, ver TicketsService.findAll en ms-tickets.
+const queryFechas = (desde, hasta) => {
+  const params = new URLSearchParams();
+  if (desde) params.set("desde", desde);
+  if (hasta) params.set("hasta", hasta);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+};
+
 export const TicketsApi = {
-  getAll: () => apiFetch(EP.tickets),
+  getAll: (desde, hasta) => apiFetch(`${EP.tickets}${queryFechas(desde, hasta)}`),
   getEstadisticas: () => apiFetch(EP.ticketsEstadisticas),
   getBySpace: (idEspacio) => apiFetch(`${EP.tickets}/espacio/${idEspacio}`),
   getByUser: (idUsuario) => apiFetch(`${EP.tickets}/usuario/${idUsuario}`),
@@ -135,6 +145,7 @@ export const TicketsApi = {
   registrarSalida: (id) => apiFetch(`${EP.tickets}/${id}/salida`, { method: "PATCH" }),
   anular: (id, motivo) =>
     apiFetch(`${EP.tickets}/${id}/anular`, { method: "PATCH", body: { motivo } }),
+  urlReporte: (desde, hasta) => `${EP.tickets}/reporte${queryFechas(desde, hasta)}`,
 };
 
 export const ZonasApi = {

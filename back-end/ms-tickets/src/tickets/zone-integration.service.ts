@@ -108,6 +108,13 @@ export class ZoneIntegrationService {
     return espacio?.estadoEspacio ?? null;
   }
 
+  // Usado por ReciboService para mostrar el código legible del espacio
+  // (ej. "ZONA-1") en el recibo PDF en vez del UUID crudo que trae el ticket.
+  async obtenerCodigo(idEspacio: string): Promise<string | null> {
+    const espacio = await this.getEspacio(idEspacio);
+    return espacio?.codigo ?? null;
+  }
+
   // Usado por el job de expiración de reservas: solo libera el espacio si
   // SIGUE reservado -- si el personal ya generó el ticket real antes de que
   // venciera la reserva, el espacio ya está OCUPADO y esto no debe tocarlo.

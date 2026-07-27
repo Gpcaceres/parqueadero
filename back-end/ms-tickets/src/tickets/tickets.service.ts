@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Ticket, EstadoTicket } from './entities/ticket.entity';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
@@ -85,8 +85,29 @@ export class TicketsService {
     return ticketGuardado;
   }
 
-  async findAll(): Promise<Ticket[]> {
+  // "desde"/"hasta" filtran por fecha de ingreso (no de salida): un ticket
+  // que entró dentro del rango pero todavía no salió también debe aparecer
+  // en el filtro/reporte del período en que ocurrió el ingreso.
+  async findAll(desde?: string, hasta?: string): Promise<Ticket[]> {
+    let where: Record<string, unknown> | undefined;
+
+    if (desde && hasta) {
+      // Between es inclusivo en ambos extremos; "hasta" se lleva al final
+      // del día para que incluya todo lo ocurrido ese día, no solo hasta
+      // las 00:00:00.
+      const finDia = new Date(hasta);
+      finDia.setHours(23, 59, 59, 999);
+      where = { fecha_hora_ingreso: Between(new Date(desde), finDia) };
+    } else if (desde) {
+      where = { fecha_hora_ingreso: MoreThanOrEqual(new Date(desde)) };
+    } else if (hasta) {
+      const finDia = new Date(hasta);
+      finDia.setHours(23, 59, 59, 999);
+      where = { fecha_hora_ingreso: LessThanOrEqual(finDia) };
+    }
+
     return await this.ticketsRepository.find({
+      where,
       order: { created_at: 'DESC' },
     });
   }
