@@ -7,6 +7,7 @@ import {
   Max,
   Min,
   IsIn,
+  IsDefined,
   ValidateNested,
   IsOptional,
 } from 'class-validator';
@@ -130,6 +131,11 @@ export class CreateVehiculoDto {
   @IsIn(['Auto', 'Moto', 'Camioneta'])
   tipo!: string;
 
+  // Sin esto, un "datos" ausente/undefined no lo rechaza @ValidateNested (no
+  // valida un objeto anidado que no existe) y llega crudo al servicio, que
+  // lanza un TypeError no capturado (500) al leer datos.placa -- ver
+  // INFORME_PRUEBAS.md, defecto D1.
+  @IsDefined({ message: 'El campo "datos" con los detalles del vehículo es obligatorio' })
   @ValidateNested()
   @Type((opts) => {
     const object = opts?.object as CreateVehiculoDto;

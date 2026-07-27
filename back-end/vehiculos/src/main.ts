@@ -1,9 +1,22 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Sin esto, los decoradores de class-validator en CreateVehiculoDto
+  // (@IsIn, @Matches, @ValidateNested/@IsDefined en "datos"...) nunca se
+  // ejecutan -- un "datos" ausente pasaba crudo hasta el servicio, que
+  // lanzaba un TypeError no capturado (500) en vez de un 400 con mensaje
+  // claro (ver INFORME_PRUEBAS.md, defecto D1). "transform: true" también es
+  // obligatorio aquí: sin él, class-transformer nunca instancia AutoDto/
+  // MotocicletaDto/CamionetaDto según "tipo", y @ValidateNested no tiene
+  // nada que validar.
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+  );
 
   // Confiar solo en saltos desde la red privada de Docker (Kong), no en toda la
   // cadena. Con `true` se confía en cualquier hop y Express toma la IP más a la

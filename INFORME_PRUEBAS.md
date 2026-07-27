@@ -88,14 +88,16 @@ Ejecutadas contra `http://localhost:8000` (Kong, vía `minikube tunnel`) sobre e
 
 ## 4. Defectos encontrados
 
-### D1 — `vehiculos`: payload inválido produce `HTTP 500` en vez de `400` (defecto real, no corregido)
+### D1 — `vehiculos`: payload inválido producía `HTTP 500` en vez de `400` ✅ **Corregido**
 
-**Severidad:** Media
-**Dónde:** `back-end/vehiculos/src/vehiculos/dto/create-vehiculo.dto.ts`
+**Severidad:** Media → Resuelta
+**Dónde:** `back-end/vehiculos/src/vehiculos/dto/create-vehiculo.dto.ts`, `back-end/vehiculos/src/main.ts`
 
-`CreateVehiculoDto.datos` está anotado solo con `@ValidateNested()` y `@Type(...)`, sin `@IsDefined()` / `@IsNotEmptyObject()`. Si el campo `datos` llega ausente o `undefined`, `class-validator` no lo rechaza (no valida un objeto anidado que no existe), y la petición pasa al controller/servicio, donde `VehiculosService.createVehiculo` accede directamente a `createVehiculoDto.datos.placa` sin verificación previa, lanzando un `TypeError` no capturado que Nest traduce en un `HTTP 500 Internal server error` genérico en vez de un `400 Bad Request` con un mensaje útil.
+**Causa raíz (dos problemas, no uno):**
+1. `CreateVehiculoDto.datos` estaba anotado solo con `@ValidateNested()` y `@Type(...)`, sin `@IsDefined()` — un `datos` ausente no lo rechaza `@ValidateNested` (no valida un objeto anidado que no existe).
+2. Más grave: **`vehiculos` era el único de los 6 microservicios sin `ValidationPipe` global registrado** en `main.ts` (los otros 5 sí lo tienen). Esto significaba que **ningún** decorador de `class-validator` de `CreateVehiculoDto` se ejecutaba nunca en tiempo de ejecución (ni el formato de placa, ni los rangos de año/capacidad, ni nada) — el payload llegaba crudo al controller sin ninguna validación real, y `VehiculosService.createVehiculo` leía `createVehiculoDto.datos.placa` directamente, lanzando un `TypeError` no capturado que Nest traducía en `HTTP 500`.
 
-**Reproducción:**
+**Reproducción (antes del fix):**
 ```bash
 curl -X POST http://localhost:8000/vehiculos -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token-admin>" \
@@ -103,7 +105,21 @@ curl -X POST http://localhost:8000/vehiculos -H "Content-Type: application/json"
 # -> HTTP 500 {"statusCode":500,"message":"Internal server error"}
 ```
 
-**Recomendación:** agregar `@IsDefined()` (o `@IsNotEmptyObject()`) sobre la propiedad `datos` en `CreateVehiculoDto`, y envolver el acceso en `VehiculosService.createVehiculo` con una validación explícita antes de leer `datos.placa`. No se aplicó la corrección en este trabajo por tratarse de un cambio de comportamiento de la API (código de error) que debe decidir el equipo dueño del servicio; se deja documentado para que se resuelva como parte del backlog del proyecto.
+**Corrección aplicada:**
+1. `app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))` agregado a `main.ts` (mismo patrón ya usado en `ms-tickets`/`personas`/`ms-audit`/`asignacion-trazabilidad`). `transform: true` es además condición necesaria para que `@Type()` instancie `AutoDto`/`MotocicletaDto`/`CamionetaDto` según `tipo` — sin `ValidationPipe`, esa lógica de discriminación tampoco se ejecutaba nunca.
+2. `@IsDefined()` agregado sobre `datos` en `CreateVehiculoDto`, como defensa explícita además de la activación del pipe.
+
+**Verificación tras el fix** (contra el clúster real, imagen reconstruida y redesplegada):
+```bash
+# Payload malformado -> ahora 400 con mensaje claro
+curl -X POST http://localhost:8000/vehiculos ... -d '{"tipo":"Auto","placa":"TST-9001"}'
+# -> HTTP 400 {"message":["property placa should not exist","...","El campo \"datos\"... es obligatorio"],"error":"Bad Request"}
+
+# Payload correcto -> sigue funcionando
+curl -X POST http://localhost:8000/vehiculos ... -d '{"tipo":"Auto","datos":{"placa":"TST-9010",...}}'
+# -> HTTP 201, vehículo creado
+```
+Suite de tests de `vehiculos` (3/3) re-ejecutada tras el cambio: sigue en verde.
 
 ### D2 — `personas`: validación de cédula ecuatoriana funciona correctamente (no es un defecto, se documenta como hallazgo positivo)
 
@@ -127,4 +143,4 @@ Al probar la creación de una persona con un DNI arbitrario (`9999999999`), la A
 
 ## 6. Conclusión
 
-El sistema cumple funcionalmente con los 7 puntos solicitados. El trabajo de esta ronda de pruebas encontró y corrigió una **deuda técnica real y no trivial** en el arnés de pruebas automatizadas (3 de 6 servicios no lograban ni siquiera ejecutar sus suites por deriva entre tests y código), amplió la cobertura donde no existía ninguna (`ms-audit`, `zonas`), y validó mediante pruebas manuales contra el clúster real que los flujos de negocio críticos —autenticación, autorización por rol, ciclo de vida de tickets, reservas, auditoría vía RabbitMQ, eventos en vivo vía SSE, y auto-recuperación de Kubernetes— funcionan correctamente de punta a punta. Se documentó un defecto real de validación de entrada (D1) para que el equipo lo priorice.
+El sistema cumple funcionalmente con los 7 puntos solicitados. El trabajo de esta ronda de pruebas encontró y corrigió una **deuda técnica real y no trivial** en el arnés de pruebas automatizadas (3 de 6 servicios no lograban ni siquiera ejecutar sus suites por deriva entre tests y código), amplió la cobertura donde no existía ninguna (`ms-audit`, `zonas`), y validó mediante pruebas manuales contra el clúster real que los flujos de negocio críticos —autenticación, autorización por rol, ciclo de vida de tickets, reservas, auditoría vía RabbitMQ, eventos en vivo vía SSE, y auto-recuperación de Kubernetes— funcionan correctamente de punta a punta. Se encontró y **corrigió** un defecto real de validación de entrada (D1: `vehiculos` era el único microservicio sin `ValidationPipe` global, dejando inertes todos sus decoradores de `class-validator`), verificado en vivo contra el clúster tras reconstruir y redesplegar la imagen.
