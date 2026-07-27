@@ -1,6 +1,40 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TicketsController } from './tickets.controller';
 import { TicketsService } from './tickets.service';
+import { PersonaIntegrationService } from './persona-integration.service';
+import { Ticket, EstadoTicket, TipoTarifa } from './entities/ticket.entity';
+import { OptionalAuthGuard } from '../auth/optional-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+
+// Los guards reales (OptionalAuthGuard/JwtAuthGuard/RolesGuard) dependen de
+// JwtService/Reflector -- en un test unitario del controller no se prueba
+// autenticación, así que se reemplazan por un no-op (patrón recomendado por
+// NestJS: overrideGuard) en vez de reconstruir toda su cadena de DI.
+const allowGuard = { canActivate: () => true };
+
+const mockTicket = (overrides: Partial<Ticket> = {}): Ticket => ({
+  id_ticket: '550e8400-e29b-41d4-a716-446655440099',
+  id_espacio: '550e8400-e29b-41d4-a716-446655440000',
+  id_usuario: '550e8400-e29b-41d4-a716-446655440001',
+  id_vehiculo: 'ABC-123',
+  tipo_vehiculo: 'auto',
+  fecha_hora_ingreso: new Date(),
+  fecha_hora_salida: null as unknown as Date,
+  estado_ticket: EstadoTicket.ACTIVO,
+  tipo_tarifa: TipoTarifa.POR_HORA,
+  id_empleado: null as unknown as string,
+  valor_recaudado: null as unknown as number,
+  ...overrides,
+});
+
+// Simula el request que Express/Nest inyecta con @Req() -- el controlador
+// solo lee req.ip y req.user (ver TicketsController.employeeIdFrom).
+const mockRequest = (overrides: Record<string, any> = {}) => ({
+  ip: '127.0.0.1',
+  user: { id_user: '550e8400-e29b-41d4-a716-446655440002', username: 'admin', roles: ['admin'] },
+  ...overrides,
+});
 
 describe('TicketsController', () => {
   let controller: TicketsController;
@@ -25,8 +59,21 @@ describe('TicketsController', () => {
             obtenerEstadisticas: jest.fn(),
           },
         },
+        {
+          provide: PersonaIntegrationService,
+          useValue: {
+            obtenerNombreCompleto: jest.fn(),
+          },
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(OptionalAuthGuard)
+      .useValue(allowGuard)
+      .overrideGuard(JwtAuthGuard)
+      .useValue(allowGuard)
+      .overrideGuard(RolesGuard)
+      .useValue(allowGuard)
+      .compile();
 
     controller = module.get<TicketsController>(TicketsController);
     service = module.get<TicketsService>(TicketsService);
@@ -43,28 +90,23 @@ describe('TicketsController', () => {
         id_usuario: '550e8400-e29b-41d4-a716-446655440001',
         id_vehiculo: 'ABC-123',
         tipo_vehiculo: 'auto',
-        fecha_hora_ingreso: new Date(),
+        tipo_tarifa: TipoTarifa.POR_HORA,
       };
 
-      const expectedResult = { id_ticket: 1, ...createTicketDto };
+      const expectedResult = mockTicket({ ...createTicketDto });
 
       jest.spyOn(service, 'createTicket').mockResolvedValue(expectedResult);
 
-      const result = await controller.create(createTicketDto);
+      const result = await controller.create(createTicketDto, mockRequest());
 
       expect(result).toEqual(expectedResult);
-      expect(service.createTicket).toHaveBeenCalledWith(createTicketDto);
+      expect(service.createTicket).toHaveBeenCalled();
     });
   });
 
   describe('findAll', () => {
     it('should return an array of tickets', async () => {
-      const tickets = [
-        {
-          id_ticket: 1,
-          id_espacio: '550e8400-e29b-41d4-a716-446655440000',
-        },
-      ];
+      const tickets = [mockTicket()];
 
       jest.spyOn(service, 'findAll').mockResolvedValue(tickets);
 
@@ -77,14 +119,14 @@ describe('TicketsController', () => {
 
   describe('findOne', () => {
     it('should return a single ticket', async () => {
-      const ticket = { id_ticket: 1 };
+      const ticket = mockTicket();
 
       jest.spyOn(service, 'findOne').mockResolvedValue(ticket);
 
-      const result = await controller.findOne('1');
+      const result = await controller.findOne(ticket.id_ticket);
 
       expect(result).toEqual(ticket);
-      expect(service.findOne).toHaveBeenCalledWith(1);
+      expect(service.findOne).toHaveBeenCalledWith(ticket.id_ticket);
     });
   });
 

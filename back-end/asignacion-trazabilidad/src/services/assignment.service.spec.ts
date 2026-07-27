@@ -3,6 +3,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { AssignmentService } from './assignment.service';
 import { AssignmentRepository } from '../repositories/assignment.repository';
 import { AuditService } from './audit.service';
+import { EventPublisher } from '../event-publisher.service';
 import { CreateAssignmentDto } from '../dtos/create-assignment.dto';
 
 /**
@@ -44,6 +45,12 @@ describe('AssignmentService', () => {
           useValue: {
             logAssignmentCreated: jest.fn(),
             logAssignmentRevoked: jest.fn(),
+          },
+        },
+        {
+          provide: EventPublisher,
+          useValue: {
+            publish: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

@@ -9,7 +9,7 @@ import { RegisterDto } from './dto/register.dto';
 import { Persona } from '../personas/entities/persona.entity';
 import { Role } from '../personas/entities/role.entity';
 import { UserRole } from '../personas/entities/user-role.entity';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { EventPublisher, AuditEvent } from '../event-publisher.service';
 
 @Injectable()
@@ -102,7 +102,7 @@ export class AuthService {
 
     // 1. Crear Persona
     const persona = this.personasRepository.create({
-      id_persona: uuidv4(),
+      id_persona: randomUUID(),
       first_name: registerDto.firstName,
       last_name: registerDto.lastName,
       email,

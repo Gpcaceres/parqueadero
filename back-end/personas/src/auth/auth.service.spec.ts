@@ -4,7 +4,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { User } from '../personas/entities/user.entity';
 import { Persona } from '../personas/entities/persona.entity';
-import { UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Role } from '../personas/entities/role.entity';
+import { UserRole } from '../personas/entities/user-role.entity';
+import { EventPublisher } from '../event-publisher.service';
+import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt');
@@ -18,6 +21,10 @@ describe('AuthService', () => {
   beforeEach(async () => {
     mockUserRepository = {
       findOne: jest.fn(),
+      // generateUniqueUsername() consulta usuarios existentes con un prefijo
+      // similar para no chocar de username -- vacío por defecto (sin
+      // colisiones) salvo que un test lo sobreescriba.
+      find: jest.fn().mockResolvedValue([]),
       create: jest.fn(),
       save: jest.fn(),
     };
@@ -44,6 +51,18 @@ describe('AuthService', () => {
         {
           provide: getRepositoryToken(Persona),
           useValue: mockPersonaRepository,
+        },
+        {
+          provide: getRepositoryToken(Role),
+          useValue: { findOne: jest.fn(), find: jest.fn() },
+        },
+        {
+          provide: getRepositoryToken(UserRole),
+          useValue: { create: jest.fn(), save: jest.fn(), find: jest.fn() },
+        },
+        {
+          provide: EventPublisher,
+          useValue: { publish: jest.fn().mockResolvedValue(undefined) },
         },
       ],
     }).compile();
@@ -140,18 +159,31 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('user');
     });
 
-    it('should throw error if user already exists', async () => {
+    // register() ya no acepta username/email del cliente: los genera solo
+    // (generateUniqueUsername, a partir de nombre+apellido) y nunca rechaza
+    // por username duplicado -- si la base ya existe, le agrega un sufijo
+    // numérico (ver auth.service.ts:177-202) en vez de lanzar una excepción.
+    it('should append a numeric suffix when the base username already exists', async () => {
       const registerDto = {
-        username: 'existing',
         password: 'password123',
         firstName: 'John',
         lastName: 'Doe',
-        email: 'john@example.com',
       };
 
-      mockUserRepository.findOne.mockResolvedValue({ username: 'existing' });
+      const persona = { id_persona: '123', first_name: 'John', last_name: 'Doe' };
 
-      await expect(service.register(registerDto)).rejects.toThrow(ConflictException);
+      // La base para "John Doe" es "jdoe" -- ya existe, así que debe usar
+      // "jdoe1".
+      mockUserRepository.find.mockResolvedValue([{ username: 'jdoe' }]);
+      mockPersonaRepository.create.mockReturnValue(persona);
+      mockPersonaRepository.save.mockResolvedValue(persona);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+      mockUserRepository.create.mockImplementation((u) => u);
+      mockUserRepository.save.mockImplementation((u) => Promise.resolve(u));
+
+      const result = await service.register(registerDto);
+
+      expect(result.user.username).toBe('jdoe1');
     });
   });
 });
